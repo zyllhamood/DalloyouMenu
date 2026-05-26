@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "home": "Home",
+    "menu": "Menu"
+  },
+  "hero": {
+    "tagline": "Crafted with care. Served with grace.",
+    "cta": "Discover the Menu",
+    "eyebrow": "Featured",
+    "prev": "Previous slide",
+    "next": "Next slide"
+  },
+  "sections": {
+    "featured": "Featured Creations",
+    "new": "New Arrivals",
+    "categories": "Our Categories",
+    "story": "Our Story"
+  },
+  "product": {
+    "orderNow": "Order Now",
+    "orderViaWhatsapp": "Order via WhatsApp",
+    "startingFrom": "Starting from",
+    "unavailable": "Currently Unavailable",
+    "whatsappNotice": "You'll be redirected to WhatsApp to complete your order.",
+    "comingSoon": "Online ordering and payment coming soon.",
+    "selectSize": "Choose a size",
+    "searchPlaceholder": "Search the menu",
+    "allCategories": "All",
+    "empty": "No items found.",
+    "from": "From"
+  },
+  "sizes": {
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "retry": "Try Again"
+  },
+  "brand": {
+    "name": "Dalloyou",
+    "tagline": "Luxury Patisserie",
+    "longTagline": "A house of refined pastry, where French technique meets the warmth of the Levant."
+  },
+  "about": {
+    "short": "Dalloyou is a Riyadh house of pastry built on a single principle: nothing leaves our kitchen that we wouldn't serve our family. Each cake, tart, and chocolate is made by hand in small batches, with French technique applied to ingredients we trust — pistachio from Gaziantep, butter from Normandy, dates from Al-Qassim. The result is patisserie that feels both rooted and quietly modern."
+  },
+  "footer": {
+    "whatsappCta": "Message us on WhatsApp",
+    "branches": "Our Branches",
+    "openInMaps": "Open in Maps",
+    "copyright": "All rights reserved.",
+    "madeIn": "Made with love in Khobar",
+    "branch1": {
+      "city": "Al Khobar",
+      "area": "Corniche District"
+    },
+    "branch2": {
+      "city": "Dammam",
+      "area": "Al Faisaliyah"
+    }
+  },
+  "breadcrumb": {
+    "home": "Home",
+    "menu": "Menu"
+  },
+  "page": {
+    "homeTitle": "Dalloyou — Luxury Patisserie",
+    "homeDesc": "Hand-crafted cakes, tarts, and chocolates. Made in small batches in Riyadh.",
+    "menuTitle": "Our Menu — Dalloyou",
+    "menuDesc": "Explore the full Dalloyou menu — cakes, tarts, pastries, and chocolates.",
+    "productDescFallback": "A Dalloyou creation."
+  }
+}
