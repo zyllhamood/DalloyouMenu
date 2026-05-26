@@ -63,7 +63,7 @@ export function HeroCarousel({ products, isLoading = false }: HeroCarouselProps)
   const reduceMotion = useReducedMotion();
 
   const slides = useMemo(
-    () => products.filter((p) => p.styled_image || p.display_image),
+    () => products.filter((p) => p.styled_image),
     [products],
   );
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -89,7 +89,7 @@ export function HeroCarousel({ products, isLoading = false }: HeroCarouselProps)
   useEffect(() => {
     if (slides.length < 2) return;
     const next = slides[(currentIndex + 1) % slides.length];
-    const url = next.styled_image ?? next.display_image;
+    const url = next.styled_image;
     if (!url) return;
     const img = new Image();
     img.src = url;
@@ -154,7 +154,7 @@ export function HeroCarousel({ products, isLoading = false }: HeroCarouselProps)
   }
 
   const slide = slides[currentIndex];
-  const slideImage = slide.styled_image ?? slide.display_image ?? STYLED_FALLBACK;
+  const slideImage = slide.styled_image ?? STYLED_FALLBACK;
   const slideName = localized(slide.name_en, slide.name_ar, lang);
   const slideDesc = localized(slide.description_en, slide.description_ar, lang);
   const startingPrice = slide.starting_price ?? slide.base_price;

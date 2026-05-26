@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 
-import i18n, { LANG_STORAGE_KEY, type SupportedLanguage } from '../lib/i18n';
+import i18n, {
+  LANG_DEFAULT_VERSION_KEY,
+  LANG_STORAGE_KEY,
+  type SupportedLanguage,
+} from '../lib/i18n';
 
 interface UiState {
   language: SupportedLanguage;
@@ -8,11 +12,16 @@ interface UiState {
 }
 
 function initialLanguage(): SupportedLanguage {
-  if (typeof window === 'undefined') return 'en';
+  if (typeof window === 'undefined') return 'ar';
+  if (!window.localStorage.getItem(LANG_DEFAULT_VERSION_KEY)) {
+    window.localStorage.setItem(LANG_STORAGE_KEY, 'ar');
+    window.localStorage.setItem(LANG_DEFAULT_VERSION_KEY, '1');
+    void i18n.changeLanguage('ar');
+    return 'ar';
+  }
   const stored = window.localStorage.getItem(LANG_STORAGE_KEY);
   if (stored === 'ar' || stored === 'en') return stored;
-  const detected = i18n.language?.split('-')[0];
-  return detected === 'ar' ? 'ar' : 'en';
+  return 'ar';
 }
 
 export const useUiStore = create<UiState>((set) => ({

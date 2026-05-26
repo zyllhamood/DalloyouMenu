@@ -31,7 +31,6 @@ import { formatPrice, isArabic, localized } from '../lib/format';
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 // Numeric rank used for sorting — higher = bigger size
 const SIZE_RANK: Record<SizeKey, number> = { small: 1, medium: 2, large: 3 };
-const FALLBACK_DISPLAY = 'https://placehold.co/800x800/FFFFFF/C9A961?text=Dalloyou&font=cormorant';
 
 function WhatsAppGlyph() {
   return (
@@ -108,14 +107,12 @@ export default function ProductPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isZoomOpen, handleKeyDown]);
 
-  // Use the variant-specific image when the selected size has one; fall back to
-  // the product's display_image, then to the placeholder.
   // ⚠ Must be declared BEFORE the conditional returns so hook call count never
   //   varies between renders (Rules of Hooks). `product` may be undefined here.
-  const activeImage = useMemo(() => {
-    if (selectedSize?.image) return selectedSize.image;
-    return product?.display_image ?? FALLBACK_DISPLAY;
-  }, [selectedSize, product]);
+  const activeImage = useMemo(
+    () => selectedSize?.image ?? null,
+    [selectedSize],
+  );
 
   // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) return <ProductPageSkeleton />;
@@ -153,7 +150,7 @@ export default function ProductPage() {
         <meta name="description" content={description.slice(0, 160)} />
         <meta property="og:title" content={productName} />
         <meta property="og:description" content={description.slice(0, 200)} />
-        {product.display_image && <meta property="og:image" content={activeImage} />}
+        {activeImage && <meta property="og:image" content={activeImage} />}
       </Helmet>
 
       <Container maxW="1400px" px={{ base: 6, md: 10 }} py={{ base: 10, md: 16 }}>
@@ -215,28 +212,32 @@ export default function ProductPage() {
               {/* Padding-trick 1:1 aspect ratio — avoids Chakra AspectRatio single-child
                   conflicts with AnimatePresence rendering multiple elements during transition */}
               <Box position="relative" sx={{ paddingTop: '100%' }}>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.img
-                    key={activeImage}
-                    src={activeImage}
-                    alt={productName}
-                    loading="eager"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      objectPosition: 'center',
-                      display: 'block',
-                    }}
-                  />
-                </AnimatePresence>
+                {activeImage ? (
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.img
+                      key={activeImage}
+                      src={activeImage}
+                      alt={productName}
+                      loading="eager"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        objectPosition: 'center',
+                        display: 'block',
+                      }}
+                    />
+                  </AnimatePresence>
+                ) : (
+                  <Box position="absolute" inset={0} bg="border.subtle" opacity={0.45} />
+                )}
               </Box>
             </Box>
           </GridItem>
@@ -368,7 +369,7 @@ export default function ProductPage() {
       </Container>
 
       {/* ── Zoom modal ─────────────────────────────────────────────────────── */}
-      {isZoomOpen && (
+      {isZoomOpen && activeImage && (
         <Portal>
           {/* Backdrop — click anywhere outside the image to close */}
           <Box

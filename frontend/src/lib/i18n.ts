@@ -11,6 +11,7 @@ export const SUPPORTED_LANGUAGES = ['en', 'ar'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const LANG_STORAGE_KEY = 'dalloyou.lang';
+export const LANG_DEFAULT_VERSION_KEY = 'dalloyou.lang.default.v2';
 
 i18n
   .use(LanguageDetector)
@@ -20,13 +21,13 @@ i18n
       en: { common: enCommon, admin: enAdmin },
       ar: { common: arCommon, admin: arAdmin },
     },
-    fallbackLng: 'en',
+    fallbackLng: 'ar',
     supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
     ns: ['common', 'admin'],
     defaultNS: 'common',
     interpolation: { escapeValue: false },
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       lookupLocalStorage: LANG_STORAGE_KEY,
       caches: ['localStorage'],
     },

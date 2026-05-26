@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   Button,
   Flex,
@@ -24,6 +23,7 @@ import { Package, Plus, Star, Tag } from 'lucide-react';
 import StatCard from '../../components/admin/StatCard';
 import { adminProductsList, categoriesList, productsList } from '../../lib/api';
 import { localized } from '../../lib/format';
+import { getPrimaryVariantImage } from '../../lib/productImages';
 import { useAuthStore } from '../../stores/authStore';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
@@ -257,12 +257,14 @@ export default function AdminDashboardPage() {
                       </Td>
                     </Tr>
                   )
-                : (recent.data?.results ?? []).map((p) => (
+                : (recent.data?.results ?? []).map((p) => {
+                    const thumbnail = getPrimaryVariantImage(p);
+                    return (
                     <Tr key={p.id} _hover={{ bg: 'bg.canvas' }}>
                       <Td px={4}>
                         <Box w="48px" h="48px" borderRadius="8px" overflow="hidden" bg="warm.cream" border="1px solid" borderColor="border.subtle" flexShrink={0}>
-                          {p.display_image ? (
-                            <Image src={p.display_image} alt="" w="100%" h="100%" objectFit="cover" loading="lazy" />
+                          {thumbnail ? (
+                            <Image src={thumbnail} alt="" w="100%" h="100%" objectFit="cover" loading="lazy" />
                           ) : (
                             <Box w="100%" h="100%" bg="border.subtle" />
                           )}
@@ -307,7 +309,8 @@ export default function AdminDashboardPage() {
                         </Button>
                       </Td>
                     </Tr>
-                  ))}
+                    );
+                  })}
             </Tbody>
           </Table>
         </Box>

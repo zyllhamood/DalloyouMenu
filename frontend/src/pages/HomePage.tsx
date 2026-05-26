@@ -1,11 +1,7 @@
 import {
   Box,
   Container,
-  Grid,
-  GridItem,
-  Heading,
   SimpleGrid,
-  Stack,
   Text,
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
@@ -20,9 +16,6 @@ import { categoriesList, featuredProducts, productsList } from '../lib/api';
 import { localized } from '../lib/format';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
-
-const STORY_IMAGE =
-  'https://placehold.co/800x900/FAF8F3/C9A961?text=Dalloyou&font=cormorant';
 
 export default function HomePage() {
   const { t, i18n } = useTranslation();
@@ -120,56 +113,6 @@ export default function HomePage() {
         </Box>
       </Container>
 
-      <Box bg="warm.cream" py={{ base: '48px', md: '80px' }}>
-        <Container maxW="1280px" px={{ base: 6, md: 10 }}>
-          <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={{ base: 10, md: 16 }} alignItems="center">
-            <GridItem>
-              <Stack spacing={6}>
-                <Box h="1px" w="40px" bg="accent.gold" opacity={0.6} />
-                <Heading
-                  as="h2"
-                  fontSize={{ base: '32px', md: '44px' }}
-                  fontWeight={500}
-                  lineHeight={1.15}
-                >
-                  {t('sections.story')}
-                </Heading>
-                <Text
-                  fontSize={{ base: '15px', md: '17px' }}
-                  lineHeight={1.85}
-                  color="text.muted"
-                >
-                  {t('about.short')}
-                </Text>
-              </Stack>
-            </GridItem>
-            <GridItem>
-              <Box
-                position="relative"
-                p={3}
-                border="1px solid"
-                borderColor="border.gold"
-                borderRadius="lg"
-                bg="bg.surface"
-              >
-                <Box
-                  as="img"
-                  src={STORY_IMAGE}
-                  alt={t('sections.story')}
-                  loading="lazy"
-                  sx={{
-                    width: '100%',
-                    height: { base: '300px', md: '480px' },
-                    objectFit: 'cover',
-                    borderRadius: '12px',
-                    display: 'block',
-                  }}
-                />
-              </Box>
-            </GridItem>
-          </Grid>
-        </Container>
-      </Box>
     </>
   );
 }

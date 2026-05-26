@@ -34,6 +34,7 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 import { adminProductsList, categoriesList, productDelete, productPatch } from '../../lib/api';
 import type { Product } from '../../lib/api';
 import { localized } from '../../lib/format';
+import { getPrimaryVariantImage } from '../../lib/productImages';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 const PAGE_SIZE = 20;
@@ -299,7 +300,9 @@ export default function AdminProductsPage() {
                       </Td>
                     </Tr>
                   )
-                : (products.data?.results ?? []).map((p) => (
+                : (products.data?.results ?? []).map((p) => {
+                    const thumbnail = getPrimaryVariantImage(p);
+                    return (
                     <Tr key={p.id} h="72px" _hover={{ bg: 'bg.canvas' }}>
                       {/* Thumbnail */}
                       <Td px={3}>
@@ -313,8 +316,8 @@ export default function AdminProductsPage() {
                           borderColor="border.subtle"
                           flexShrink={0}
                         >
-                          {p.display_image ? (
-                            <Image src={p.display_image} alt="" w="100%" h="100%" objectFit="cover" loading="lazy" />
+                          {thumbnail ? (
+                            <Image src={thumbnail} alt="" w="100%" h="100%" objectFit="cover" loading="lazy" />
                           ) : (
                             <Box w="100%" h="100%" bg="border.subtle" />
                           )}
@@ -402,7 +405,8 @@ export default function AdminProductsPage() {
                         </HStack>
                       </Td>
                     </Tr>
-                  ))}
+                  );
+                  })}
             </Tbody>
           </Table>
         </Box>

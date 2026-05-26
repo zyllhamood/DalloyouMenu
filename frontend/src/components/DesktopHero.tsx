@@ -97,7 +97,7 @@ export function DesktopHero({ slides, carousel }: DesktopHeroProps) {
   if (slides.length === 0) return null;
 
   const slide = slides[currentIndex];
-  const slideImage = slide.styled_image ?? slide.display_image ?? FALLBACK;
+  const slideImage = slide.styled_image ?? FALLBACK;
   const slideName = localized(slide.name_en, slide.name_ar, lang);
   const slideDesc = localized(slide.description_en, slide.description_ar, lang);
   const startingPrice = slide.starting_price ?? slide.base_price;

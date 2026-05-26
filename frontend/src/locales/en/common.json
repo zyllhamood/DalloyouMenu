@@ -34,6 +34,11 @@
     "medium": "Medium",
     "large": "Large"
   },
+  "filters": {
+    "sizes": "Sizes",
+    "open": "Filters",
+    "clear": "Clear filters"
+  },
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong.",

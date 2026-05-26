@@ -46,7 +46,7 @@ export function ViewToggleButton({ icon, active, label, onClick }: ViewToggleBut
   return (
     <IconButton
       aria-label={label}
-      icon={<>{icon}</>}
+      icon={<Box as="span" display="inline-flex">{icon}</Box>}
       onClick={onClick}
       size="sm"
       w="40px"

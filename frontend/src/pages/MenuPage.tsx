@@ -1,17 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Box,
   Button,
   Container,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerHeader,
+  DrawerOverlay,
   Flex,
   Heading,
   HStack,
   Input,
   InputGroup,
   InputLeftElement,
+  Stack,
   Text,
+  useDisclosure,
 } from '@chakra-ui/react';
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +37,22 @@ import { categoriesList, productsList } from '../lib/api';
 import { localized } from '../lib/format';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
+type Size = 'SMALL' | 'MEDIUM' | 'LARGE';
+const SIZE_FILTERS: Size[] = ['SMALL', 'MEDIUM', 'LARGE'];
+const SIZE_LABEL_KEYS: Record<Size, string> = {
+  SMALL: 'sizes.small',
+  MEDIUM: 'sizes.medium',
+  LARGE: 'sizes.large',
+};
+
+function parseSizes(value: string | null): Set<Size> {
+  const selected = new Set<Size>();
+  value?.split(',').forEach((raw) => {
+    const size = raw.trim().toUpperCase();
+    if (SIZE_FILTERS.includes(size as Size)) selected.add(size as Size);
+  });
+  return selected;
+}
 
 function SearchGlyph() {
   return (
@@ -44,10 +69,17 @@ export default function MenuPage() {
   const navigate = useNavigate();
   const { categorySlug: pathCategory } = useParams<{ categorySlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const filterDrawer = useDisclosure();
 
   const queryCategory = searchParams.get('category') ?? undefined;
   const activeCategory = pathCategory ?? queryCategory;
   const [search, setSearch] = useState(searchParams.get('q') ?? '');
+  const [sizes, setSizes] = useState<Set<Size>>(() => parseSizes(searchParams.get('size')));
+  const sizeParam = useMemo(() => Array.from(sizes).join(',') || undefined, [sizes]);
+
+  useEffect(() => {
+    setSizes(parseSizes(searchParams.get('size')));
+  }, [searchParams]);
 
   // View mode (controlled here so the toggle lives in the filter bar)
   const [viewMode, setViewMode] = useState<ViewMode>(readStoredViewMode);
@@ -79,20 +111,56 @@ export default function MenuPage() {
   });
 
   const products = useQuery({
-    queryKey: ['productsList', { category: activeCategory, search }],
-    queryFn: () => productsList({ category: activeCategory, search: search || undefined }),
+    queryKey: ['productsList', { category: activeCategory, search, size: sizeParam }],
+    queryFn: () => productsList({
+      category: activeCategory,
+      search: search || undefined,
+      size: sizeParam,
+    }),
     ...QUERY_OPTS,
   });
 
   const items = useMemo(() => products.data?.results ?? [], [products.data]);
 
   const selectCategory = (slug?: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('category');
+    if (search) next.set('q', search);
+    else next.delete('q');
+    const suffix = next.toString() ? `?${next.toString()}` : '';
     if (slug) {
-      navigate(`/menu/${slug}${search ? `?q=${encodeURIComponent(search)}` : ''}`);
+      navigate(`/menu/${slug}${suffix}`);
     } else {
-      navigate(`/menu${search ? `?q=${encodeURIComponent(search)}` : ''}`);
+      navigate(`/menu${suffix}`);
     }
+    filterDrawer.onClose();
   };
+
+  const toggleSize = (size: Size) => {
+    const nextSizes = new Set(sizes);
+    if (nextSizes.has(size)) nextSizes.delete(size);
+    else nextSizes.add(size);
+    setSizes(nextSizes);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        const value = Array.from(nextSizes).join(',');
+        if (value) next.set('size', value);
+        else next.delete('size');
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setSizes(new Set());
+    filterDrawer.onClose();
+    navigate('/menu');
+  };
+
+  const hasFilters = Boolean(activeCategory || search || sizes.size);
 
   return (
     <>
@@ -129,24 +197,26 @@ export default function MenuPage() {
         backdropFilter="saturate(180%) blur(12px)"
         borderBottom="1px solid"
         borderColor="border.subtle"
+        overflowX="hidden"
       >
         <Container maxW="1280px" px={{ base: 6, md: 10 }} py={4}>
-          <Flex
-            direction={{ base: 'column', md: 'row' }}
-            align={{ base: 'stretch', md: 'center' }}
-            gap={4}
-            justify="space-between"
-          >
-            {/* Category pills + mobile view toggle */}
-            <Flex align="center" gap={3} flex={1} minW={0}>
-              <HStack
-                spacing={2}
-                overflowX="auto"
-                flex={1}
-                minW={0}
-                pb={{ base: 1, md: 0 }}
-                sx={{ scrollbarWidth: 'thin' }}
+          <Stack spacing={3}>
+            <Flex display={{ base: 'flex', md: 'none' }} gap={3} align="center" minW={0}>
+              <Button
+                leftIcon={<SlidersHorizontal size={16} />}
+                onClick={filterDrawer.onOpen}
+                variant="goldOutline"
+                h="40px"
+                flexShrink={0}
+                px={3}
               >
+                {t('filters.open')}
+              </Button>
+              <SearchInput search={search} setSearch={setSearch} placeholder={t('product.searchPlaceholder')} />
+            </Flex>
+
+            <Stack spacing={3} display={{ base: 'none', md: 'flex' }}>
+              <FilterRow>
                 <FilterPill
                   label={t('product.allCategories')}
                   active={!activeCategory}
@@ -160,14 +230,67 @@ export default function MenuPage() {
                     onClick={() => selectCategory(c.slug)}
                   />
                 ))}
-              </HStack>
+              </FilterRow>
 
-              {/* View toggle — mobile only, sits in the filter bar */}
-              <HStack
-                spacing={1}
-                flexShrink={0}
-                display={{ base: 'flex', md: 'none' }}
-              >
+              <FilterRow label={t('filters.sizes')}>
+                {SIZE_FILTERS.map((size) => (
+                  <FilterPill
+                    key={size}
+                    label={t(SIZE_LABEL_KEYS[size])}
+                    active={sizes.has(size)}
+                    onClick={() => toggleSize(size)}
+                  />
+                ))}
+              </FilterRow>
+
+              <Flex align="center" justify="space-between" gap={4}>
+                <SearchInput search={search} setSearch={setSearch} placeholder={t('product.searchPlaceholder')} />
+                {hasFilters && (
+                  <Button size="sm" variant="ghostGold" onClick={clearFilters}>
+                    {t('filters.clear')}
+                  </Button>
+                )}
+              </Flex>
+            </Stack>
+          </Stack>
+        </Container>
+      </Box>
+
+      <Drawer isOpen={filterDrawer.isOpen} placement="bottom" onClose={filterDrawer.onClose}>
+        <DrawerOverlay />
+        <DrawerContent bg="bg.surface" borderTopRadius="lg" maxW="100vw" overflowX="hidden">
+          <DrawerCloseButton />
+          <DrawerHeader fontFamily="heading" fontWeight={500}>{t('filters.open')}</DrawerHeader>
+          <DrawerBody pb={8} overflowX="hidden">
+            <Stack spacing={6}>
+              <FilterRow>
+                <FilterPill
+                  label={t('product.allCategories')}
+                  active={!activeCategory}
+                  onClick={() => selectCategory(undefined)}
+                />
+                {(categories.data ?? []).map((c) => (
+                  <FilterPill
+                    key={c.id}
+                    label={localized(c.name_en, c.name_ar, lang)}
+                    active={activeCategory === c.slug}
+                    onClick={() => selectCategory(c.slug)}
+                  />
+                ))}
+              </FilterRow>
+
+              <FilterRow label={t('filters.sizes')}>
+                {SIZE_FILTERS.map((size) => (
+                  <FilterPill
+                    key={size}
+                    label={t(SIZE_LABEL_KEYS[size])}
+                    active={sizes.has(size)}
+                    onClick={() => toggleSize(size)}
+                  />
+                ))}
+              </FilterRow>
+
+              <HStack spacing={1}>
                 <ViewToggleButton
                   icon={<LayoutGrid size={16} />}
                   active={viewMode === 'grid'}
@@ -181,32 +304,19 @@ export default function MenuPage() {
                   onClick={() => handleViewMode('list')}
                 />
               </HStack>
-            </Flex>
 
-            {/* Search */}
-            <InputGroup maxW={{ base: '100%', md: '280px' }} flexShrink={0}>
-              <InputLeftElement pointerEvents="none" color="text.muted">
-                <SearchGlyph />
-              </InputLeftElement>
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('product.searchPlaceholder')}
-                bg="bg.surface"
-                border="1px solid"
-                borderColor="border.subtle"
-                borderRadius="sm"
-                h="40px"
-                fontSize="14px"
-                _focus={{ borderColor: 'accent.gold', boxShadow: 'none' }}
-              />
-            </InputGroup>
-          </Flex>
-        </Container>
-      </Box>
+              {hasFilters && (
+                <Button variant="ghostGold" onClick={clearFilters}>
+                  {t('filters.clear')}
+                </Button>
+              )}
+            </Stack>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
 
       {/* ── Product grid (toggle managed above) ── */}
-      <Container maxW="1280px" px={{ base: 6, md: 10 }} py={{ base: 10, md: 16 }}>
+      <Container maxW="1280px" px={{ base: 5, md: 10 }} py={{ base: 10, md: 16 }} overflowX="hidden">
         <ProductsGrid
           products={items}
           isLoading={products.isLoading}
@@ -216,6 +326,65 @@ export default function MenuPage() {
         />
       </Container>
     </>
+  );
+}
+
+function SearchInput({
+  search,
+  setSearch,
+  placeholder,
+}: {
+  search: string;
+  setSearch: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <InputGroup maxW={{ base: '100%', md: '280px' }} minW={0} flex={{ base: 1, md: '0 0 auto' }}>
+      <InputLeftElement pointerEvents="none" color="text.muted">
+        <SearchGlyph />
+      </InputLeftElement>
+      <Input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder={placeholder}
+        bg="bg.surface"
+        border="1px solid"
+        borderColor="border.subtle"
+        borderRadius="sm"
+        h="40px"
+        fontSize="14px"
+        _focus={{ borderColor: 'accent.gold', boxShadow: 'none' }}
+      />
+    </InputGroup>
+  );
+}
+
+function FilterRow({ label, children }: { label?: string; children: ReactNode }) {
+  return (
+    <Stack spacing={2} w="100%" maxW="100%" minW={0}>
+      {label && (
+        <Text
+          fontSize="10px"
+          letterSpacing="0.22em"
+          textTransform="uppercase"
+          color="accent.goldDeep"
+          fontWeight={600}
+        >
+          {label}
+        </Text>
+      )}
+      <HStack
+        spacing={2}
+        overflowX="auto"
+        w="100%"
+        maxW="100%"
+        minW={0}
+        pb={1}
+        sx={{ scrollbarWidth: 'thin' }}
+      >
+        {children}
+      </HStack>
+    </Stack>
   );
 }
 

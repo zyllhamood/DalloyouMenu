@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { AspectRatio, Box, LinkBox, LinkOverlay, Text } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import type { Product } from '../lib/api';
 import { formatStartingFrom, localized } from '../lib/format';
+import { getPrimaryVariantImage } from '../lib/productImages';
 
 interface ProductCardProps {
   product: Product;
@@ -12,9 +14,7 @@ interface ProductCardProps {
   listMode?: boolean;
 }
 
-const CREAM_FALLBACK = 'https://placehold.co/600x750/FAF8F3/C9A961?text=Dalloyou&font=cormorant';
-
-export function ProductCard({ product, eager = false, listMode = false }: ProductCardProps) {
+export function ProductCard({ product, eager = false }: ProductCardProps) {
   const { i18n, t } = useTranslation();
   const lang = i18n.language;
 
@@ -22,6 +22,7 @@ export function ProductCard({ product, eager = false, listMode = false }: Produc
   const catName = localized(product.category.name_en, product.category.name_ar, lang);
   const price = product.starting_price ?? product.base_price;
   const unavailable = !product.is_available;
+  const primaryImage = useMemo(() => getPrimaryVariantImage(product), [product]);
 
   return (
     <LinkBox
@@ -53,22 +54,26 @@ export function ProductCard({ product, eager = false, listMode = false }: Produc
           * "4 / 3" (boxier), "16 / 9" (wide).
           */}
         <AspectRatio ratio={5 / 4}>
-          <Box
-            as="img"
-            src={product.display_image ?? CREAM_FALLBACK}
-            alt={name}
-            loading={eager ? 'eager' : 'lazy'}
-            sx={{
-              objectFit: 'cover',
-              objectPosition: 'center',
-              width: '100%',
-              height: '100%',
-              filter: unavailable ? 'grayscale(1) opacity(0.6)' : 'none',
-              transition: 'transform 600ms ease-out',
-              '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-            }}
-            _groupHover={unavailable ? undefined : { transform: 'scale(1.04)' }}
-          />
+          {primaryImage ? (
+            <Box
+              as="img"
+              src={primaryImage}
+              alt={name}
+              loading={eager ? 'eager' : 'lazy'}
+              sx={{
+                objectFit: 'cover',
+                objectPosition: 'center',
+                width: '100%',
+                height: '100%',
+                filter: unavailable ? 'grayscale(1) opacity(0.6)' : 'none',
+                transition: 'transform 600ms ease-out',
+                '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+              }}
+              _groupHover={unavailable ? undefined : { transform: 'scale(1.04)' }}
+            />
+          ) : (
+            <Box bg="border.subtle" opacity={0.45} />
+          )}
         </AspectRatio>
 
         {unavailable && (

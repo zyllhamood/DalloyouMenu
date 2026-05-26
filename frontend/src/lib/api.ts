@@ -94,6 +94,7 @@ export interface Category {
 }
 
 export type SizeKey = 'small' | 'medium' | 'large';
+export type VariantSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 
 export interface ProductSize {
   id: number;
@@ -101,7 +102,16 @@ export interface ProductSize {
   price: number;       // normalised to Number at the API boundary
   currency?: string;
   is_available?: boolean;
-  image?: string | null;
+  image: string;
+}
+
+export interface ProductVariant {
+  id: number;
+  product: number;
+  size: VariantSize;
+  price: number;
+  is_available: boolean;
+  image: string;
 }
 
 export interface Product {
@@ -113,9 +123,9 @@ export interface Product {
   description_en?: string;
   description_ar?: string;
   category: Category;
-  display_image: string | null;
   styled_image: string | null;
   gallery?: string[];
+  variants: ProductVariant[];
   sizes?: ProductSize[];  // absent on list responses; normalised from `variants` on detail
   base_price: number;     // normalised to Number at the API boundary (wire sends string)
   starting_price: number;
@@ -142,6 +152,7 @@ export interface ProductListParams {
   pageSize?: number;
   limit?: number;
   ordering?: string;
+  size?: string;
 }
 
 export interface AdminLoginPayload {
@@ -163,7 +174,14 @@ export const categoriesList = async (): Promise<Category[]> => {
 };
 
 function normaliseListProduct(p: any): Product {
-  return { ...p, base_price: Number(p.base_price) };
+  return {
+    ...p,
+    base_price: Number(p.base_price),
+    variants: (p.variants ?? []).map((v: any) => ({
+      ...v,
+      price: Number(v.price),
+    })),
+  };
 }
 
 export const productsList = async (params: ProductListParams = {}): Promise<Paginated<Product>> => {
@@ -177,6 +195,7 @@ export const productsList = async (params: ProductListParams = {}): Promise<Pagi
       page_size: params.pageSize,
       limit: params.limit,
       ordering: params.ordering,
+      size: params.size,
     },
   });
   return { ...data, results: data.results.map(normaliseListProduct) };
@@ -194,8 +213,13 @@ export const productDetail = async (id: number | string): Promise<Product> => {
     size: (v.size as string).toLowerCase() as SizeKey,
     price: Number(v.price),
   }));
+  const variants: ProductVariant[] = (data.variants ?? []).map((v: any) => ({
+    ...v,
+    price: Number(v.price),
+  }));
   return {
     ...data,
+    variants,
     sizes,
     base_price: Number(data.base_price),
   } as Product;
@@ -298,6 +322,7 @@ export const adminProductsList = async (
       page_size: params.pageSize ?? 20,
       limit: params.limit,
       ordering: params.ordering,
+      size: params.size,
     },
   });
   return { ...data, results: data.results.map(normaliseListProduct) };

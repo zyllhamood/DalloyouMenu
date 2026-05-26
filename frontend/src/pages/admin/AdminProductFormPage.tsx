@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Box,
   Button,
@@ -41,6 +42,7 @@ const variantSchema = z.object({
   enabled: z.boolean(),
   price: z.number().nonnegative().optional(),
   isAvailable: z.boolean(),
+  image: z.union([z.instanceof(File), z.string().min(1)]).nullable().optional(),
 });
 
 const schema = z.object({
@@ -50,7 +52,7 @@ const schema = z.object({
   descriptionEn: z.string().max(2000).optional().default(''),
   descriptionAr: z.string().max(2000).optional().default(''),
   basePrice: z.number().nonnegative('Must be ≥ 0'),
-  hasVariants: z.boolean().default(false),
+  hasVariants: z.boolean().default(true),
   small: variantSchema,
   medium: variantSchema,
   large: variantSchema,
@@ -59,23 +61,36 @@ const schema = z.object({
   isAvailable: z.boolean().default(true),
   order: z.number().int().nonnegative().default(0),
 }).superRefine((data, ctx) => {
-  if (data.hasVariants) {
-    SIZES.forEach((size) => {
-      const v = data[size];
-      if (v.enabled && (v.price === undefined || v.price < 0)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Price required for enabled size',
-          path: [size, 'price'],
-        });
-      }
+  const enabledSizes = SIZES.filter((size) => data[size].enabled);
+  if (!enabledSizes.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Add at least one size to continue.',
+      path: ['hasVariants'],
     });
   }
+  enabledSizes.forEach((size) => {
+    const v = data[size];
+    if (v.price === undefined || v.price < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Price required for enabled size',
+        path: [size, 'price'],
+      });
+    }
+    if (!(v.image instanceof File) && !(typeof v.image === 'string' && v.image.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Image is required for this size',
+        path: [size, 'image'],
+      });
+    }
+  });
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const DEFAULT_VARIANT = { enabled: false, price: undefined, isAvailable: true };
+const DEFAULT_VARIANT = { enabled: false, price: undefined, isAvailable: true, image: null };
 
 const defaultValues: FormValues = {
   categoryId: 0,
@@ -84,7 +99,7 @@ const defaultValues: FormValues = {
   descriptionEn: '',
   descriptionAr: '',
   basePrice: 0,
-  hasVariants: false,
+  hasVariants: true,
   small: { ...DEFAULT_VARIANT },
   medium: { ...DEFAULT_VARIANT },
   large: { ...DEFAULT_VARIANT },
@@ -104,20 +119,15 @@ export default function AdminProductFormPage() {
   const { id } = useParams<{ id?: string }>();
   const isEdit = Boolean(id);
 
-  const [displayImage, setDisplayImage] = useState<File | string | null>(null);
   const [styledImage, setStyledImage] = useState<File | string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageError, setImageError] = useState<{ display?: string; styled?: string }>({});
+  const [imageError, setImageError] = useState<{ styled?: string }>({});
 
   const [variantImages, setVariantImages] = useState<Record<SizeKey, File | string | null>>({
     small: null,
     medium: null,
     large: null,
   });
-
-  const handleVariantImageChange = (size: SizeKey, img: File | null) => {
-    setVariantImages((prev) => ({ ...prev, [size]: img }));
-  };
 
   const cats = useQuery({ queryKey: ['categoriesList'], queryFn: categoriesList, ...QUERY_OPTS });
 
@@ -134,11 +144,17 @@ export default function AdminProductFormPage() {
     control,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: standardSchemaResolver(schema) as Resolver<FormValues>,
     defaultValues,
   });
+
+  const handleVariantImageChange = (size: SizeKey, img: File | string | null) => {
+    setVariantImages((prev) => ({ ...prev, [size]: img }));
+    setValue(`${size}.image` as const, img, { shouldDirty: true, shouldValidate: true });
+  };
 
   useEffect(() => {
     if (!existing.data) return;
@@ -154,23 +170,20 @@ export default function AdminProductFormPage() {
       descriptionEn: p.description_en ?? '',
       descriptionAr: p.description_ar ?? '',
       basePrice: Number(p.base_price),
-      hasVariants: sizes.length > 0,
-      small: sm ? { enabled: true, price: sm.price, isAvailable: sm.is_available ?? true } : { ...DEFAULT_VARIANT },
-      medium: md ? { enabled: true, price: md.price, isAvailable: true } : { ...DEFAULT_VARIANT },
-      large: lg ? { enabled: true, price: lg.price, isAvailable: true } : { ...DEFAULT_VARIANT },
+      hasVariants: true,
+      small: sm ? { enabled: true, price: sm.price, isAvailable: sm.is_available ?? true, image: sm.image } : { ...DEFAULT_VARIANT },
+      medium: md ? { enabled: true, price: md.price, isAvailable: md.is_available ?? true, image: md.image } : { ...DEFAULT_VARIANT },
+      large: lg ? { enabled: true, price: lg.price, isAvailable: lg.is_available ?? true, image: lg.image } : { ...DEFAULT_VARIANT },
       isFeatured: p.is_featured,
       isNew: p.is_new ?? false,
       isAvailable: p.is_available,
       order: 0,
     });
-    setDisplayImage(p.display_image);
     setStyledImage(p.styled_image);
     const imgs: Record<SizeKey, File | string | null> = { small: null, medium: null, large: null };
     (p.sizes ?? []).forEach((s) => { if (s.image) imgs[s.size] = s.image; });
     setVariantImages(imgs);
   }, [existing.data, reset]);
-
-  const hasVariants = watch('hasVariants');
 
   const buildFormData = (values: FormValues): FormData => {
     const fd = new FormData();
@@ -185,15 +198,12 @@ export default function AdminProductFormPage() {
     fd.append('is_available', values.isAvailable ? 'true' : 'false');
     fd.append('order', String(values.order));
     fd.append('slug', slugify(values.nameEn));
-    if (displayImage instanceof File) fd.append('display_image', displayImage);
     if (styledImage instanceof File) fd.append('styled_image', styledImage);
-    const variantList = values.hasVariants
-      ? SIZES.filter((s) => values[s].enabled).map((s) => ({
+    const variantList = SIZES.filter((s) => values[s].enabled).map((s) => ({
           size: s.toUpperCase(),
           price: values[s].price ?? 0,
           is_available: values[s].isAvailable,
-        }))
-      : [];
+        }));
     fd.append('variants', JSON.stringify(variantList));
     SIZES.forEach((s) => {
       const img = variantImages[s];
@@ -204,9 +214,7 @@ export default function AdminProductFormPage() {
 
   const onSubmit = async (values: FormValues) => {
     const errs: typeof imageError = {};
-    if (!displayImage) errs.display = t('form.required');
     if (!styledImage) errs.styled = t('form.required');
-    if (!isEdit && !(displayImage instanceof File)) errs.display = t('form.required');
     if (!isEdit && !(styledImage instanceof File)) errs.styled = t('form.required');
     if (Object.keys(errs).length) {
       setImageError(errs);
@@ -250,19 +258,33 @@ export default function AdminProductFormPage() {
   return (
     <>
       {/* Content area — bottom padding so sticky bar never overlaps */}
-      <Stack spacing={12} maxW="900px" pb="100px">
+      <Stack spacing={{ base: 8, md: 10 }} maxW="960px" w="100%" pb={{ base: '160px', md: '100px' }}>
         {/* Page heading */}
-        <Box>
+        <Box
+          bg="bg.surface"
+          border="1px solid"
+          borderColor="border.subtle"
+          borderRadius="lg"
+          px={{ base: 5, md: 6 }}
+          py={{ base: 5, md: 6 }}
+        >
+          <Text fontSize="11px" color="accent.goldDeep" letterSpacing="0.22em" textTransform="uppercase" fontWeight={600} mb={2}>
+            {isEdit ? t('form.editEyebrow') : t('form.createEyebrow')}
+          </Text>
           <Text fontFamily="heading" fontWeight={500} fontSize={{ base: '24px', md: '28px' }} color="text.primary">
             {isEdit ? `${t('edit')}: ${existing.data?.name_en ?? ''}` : t('addProduct')}
+          </Text>
+          <Text fontSize="13px" color="text.muted" mt={2} maxW="680px" lineHeight={1.6}>
+            {t('form.productFormIntro')}
           </Text>
         </Box>
 
         <form id="product-form" onSubmit={handleSubmit(onSubmit, onError)} noValidate>
-          <Stack spacing={12}>
+          <Stack spacing={{ base: 8, md: 10 }}>
 
             {/* ── Section A: Basic Information ─────────────────────────── */}
             <SectionCard
+              step="1"
               title={t('form.sectionBasicInfo')}
               description={t('form.sectionBasicDesc')}
             >
@@ -290,39 +312,32 @@ export default function AdminProductFormPage() {
                         </Select>
                       )}
                     />
+                    {!errors.categoryId && (
+                      <Text fontSize="11px" color="text.muted" mt={1.5}>
+                        {t('form.categoryHelper')}
+                      </Text>
+                    )}
                     <FormErrorMessage fontSize="11px">{errors.categoryId?.message}</FormErrorMessage>
                   </FormControl>
                 </GridItem>
-                <TextField label={t('form.nameEn')} isRequired error={errors.nameEn?.message} {...register('nameEn')} />
-                <TextField label={t('form.nameAr')} isRequired error={errors.nameAr?.message} {...register('nameAr')} dir="rtl" />
+                <TextField label={t('form.nameEn')} helper={t('form.nameEnHelper')} isRequired error={errors.nameEn?.message} {...register('nameEn')} />
+                <TextField label={t('form.nameAr')} helper={t('form.nameArHelper')} isRequired error={errors.nameAr?.message} {...register('nameAr')} dir="rtl" />
                 <GridItem colSpan={{ base: 1, md: 2 }}>
-                  <Stack spacing={1}>
-                    <TextareaField label={t('form.descEn')} error={errors.descriptionEn?.message} {...register('descriptionEn')} />
-                    <Text fontSize="11px" color="text.muted">{t('form.descEnHelper')}</Text>
-                  </Stack>
+                  <TextareaField label={t('form.descEn')} helper={t('form.descEnHelper')} error={errors.descriptionEn?.message} {...register('descriptionEn')} />
                 </GridItem>
                 <GridItem colSpan={{ base: 1, md: 2 }}>
-                  <Stack spacing={1}>
-                    <TextareaField label={t('form.descAr')} error={errors.descriptionAr?.message} {...register('descriptionAr')} dir="rtl" />
-                    <Text fontSize="11px" color="text.muted">{t('form.descArHelper')}</Text>
-                  </Stack>
+                  <TextareaField label={t('form.descAr')} helper={t('form.descArHelper')} error={errors.descriptionAr?.message} {...register('descriptionAr')} dir="rtl" />
                 </GridItem>
               </Grid>
             </SectionCard>
 
             {/* ── Section B: Images ─────────────────────────────────────── */}
             <SectionCard
+              step="2"
               title={t('form.sectionImages')}
               description={t('form.sectionImagesDesc')}
             >
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                <ImageDropZone
-                  label={t('form.displayImage')}
-                  hint={t('form.displayImageHint')}
-                  value={displayImage}
-                  onChange={(f) => { setDisplayImage(f); setImageError((e) => ({ ...e, display: undefined })); }}
-                  error={imageError.display}
-                />
+              <Box maxW="520px">
                 <ImageDropZone
                   label={t('form.styledImage')}
                   hint={t('form.styledImageHint')}
@@ -330,11 +345,12 @@ export default function AdminProductFormPage() {
                   onChange={(f) => { setStyledImage(f); setImageError((e) => ({ ...e, styled: undefined })); }}
                   error={imageError.styled}
                 />
-              </SimpleGrid>
+              </Box>
             </SectionCard>
 
             {/* ── Section C: Pricing & Sizes ───────────────────────────── */}
             <SectionCard
+              step="3"
               title={t('form.sectionPricing')}
               description={t('form.sectionPricingDesc')}
             >
@@ -357,62 +373,47 @@ export default function AdminProductFormPage() {
                   <Text fontSize="11px" color="text.muted">{t('form.basePriceHelper')}</Text>
                 </Stack>
 
-                {/* Variants toggle */}
-                <Controller
-                  name="hasVariants"
-                  control={control}
-                  render={({ field }) => (
-                    <HStack spacing={3}>
-                      <Switch
-                        id="hasVariants"
-                        colorScheme="yellow"
-                        isChecked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                      />
-                      <FormLabel htmlFor="hasVariants" mb={0} fontSize="13px" fontWeight={500} cursor="pointer">
-                        {t('form.hasVariants')}
-                      </FormLabel>
-                    </HStack>
-                  )}
-                />
-
                 {/* Variant rows */}
-                {hasVariants && (
-                  <Box
-                    bg="bg.canvas"
-                    border="1px solid"
-                    borderColor="border.subtle"
-                    borderRadius="md"
-                    p={5}
-                  >
-                    {/* Sub-header */}
-                    <Text fontSize="12px" fontWeight={600} letterSpacing="0.14em" textTransform="uppercase" color="text.muted" mb={1}>
-                      {t('form.variantSectionTitle')}
+                <Box
+                  bg="bg.canvas"
+                  border="1px solid"
+                  borderColor={errors.hasVariants ? 'red.300' : 'border.subtle'}
+                  borderRadius="md"
+                  p={5}
+                >
+                  {/* Sub-header */}
+                  <Text fontSize="12px" fontWeight={600} letterSpacing="0.14em" textTransform="uppercase" color="text.muted" mb={1}>
+                    {t('form.variantSectionTitle')}
+                  </Text>
+                  <Text fontSize="11px" color="text.muted" lineHeight={1.5} mb={4}>
+                    {t('form.variantSectionHelper')}
+                  </Text>
+                  {errors.hasVariants?.message && (
+                    <Text fontSize="12px" color="red.500" mb={4}>
+                      {errors.hasVariants.message}
                     </Text>
-                    <Text fontSize="11px" color="text.muted" lineHeight={1.5} mb={4}>
-                      {t('form.variantSectionHelper')}
-                    </Text>
-                    <Stack spacing={3}>
-                      {SIZES.map((size) => (
-                        <VariantRow
-                          key={size}
-                          size={size}
-                          control={control}
-                          watch={watch}
-                          errors={errors}
-                          t={t}
-                          variantImage={variantImages[size]}
-                          onVariantImageChange={handleVariantImageChange}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
+                  )}
+                  <Stack spacing={3}>
+                    {SIZES.map((size) => (
+                      <VariantRow
+                        key={size}
+                        size={size}
+                        control={control}
+                        watch={watch}
+                        errors={errors}
+                        t={t}
+                        variantImage={variantImages[size]}
+                        onVariantImageChange={handleVariantImageChange}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
               </Stack>
             </SectionCard>
 
             {/* ── Section D: Visibility & Order ────────────────────────── */}
             <SectionCard
+              step="4"
               title={t('form.sectionVisibility')}
               description={t('form.sectionVisibilityDesc')}
             >
@@ -508,12 +509,14 @@ export default function AdminProductFormPage() {
         borderTop="1px solid"
         borderColor="border.subtle"
         boxShadow="0 -4px 20px rgba(0,0,0,0.06)"
-        px={{ base: 5, md: 8 }}
-        py={4}
+        px={{ base: 4, md: 8 }}
+        py={{ base: 3, md: 4 }}
       >
         <Flex
           justify="space-between"
-          align="center"
+          align={{ base: 'stretch', sm: 'center' }}
+          direction={{ base: 'column', sm: 'row' }}
+          gap={{ base: 3, sm: 4 }}
           maxW="900px"
         >
           {/* Left: unsaved indicator */}
@@ -529,12 +532,13 @@ export default function AdminProductFormPage() {
           )}
 
           {/* Right: action buttons */}
-          <HStack spacing={3}>
+          <HStack spacing={3} justify="flex-end">
             <Button
               variant="ghostGold"
               size="sm"
               onClick={() => navigate('/admin/products')}
               isDisabled={isSubmitting}
+              flex={{ base: 1, sm: '0 0 auto' }}
             >
               {t('cancel')}
             </Button>
@@ -550,6 +554,7 @@ export default function AdminProductFormPage() {
               loadingText={uploadProgress > 0 ? `${t('form.uploading')} ${uploadProgress}%` : t('form.saving')}
               _hover={{ bg: 'accent.gold', color: 'warm.black' }}
               transition="all 300ms"
+              flex={{ base: 1, sm: '0 0 auto' }}
             >
               {t('form.saveProduct')}
             </Button>
@@ -607,9 +612,11 @@ interface VariantImagePickerProps {
   image: File | string | null;
   onChange: (img: File | null) => void;
   label: string;
+  error?: string;
+  helper: string;
 }
 
-function VariantImagePicker({ image, onChange, label }: VariantImagePickerProps) {
+function VariantImagePicker({ image, onChange, label, error, helper }: VariantImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -637,7 +644,7 @@ function VariantImagePicker({ image, onChange, label }: VariantImagePickerProps)
         justifyContent="center"
         borderRadius="md"
         border="1px dashed"
-        borderColor={preview ? 'accent.gold' : 'border.subtle'}
+        borderColor={error ? 'red.400' : preview ? 'accent.gold' : 'border.subtle'}
         bg="bg.canvas"
         overflow="hidden"
         cursor="pointer"
@@ -671,6 +678,14 @@ function VariantImagePicker({ image, onChange, label }: VariantImagePickerProps)
           e.currentTarget.value = '';
         }}
       />
+      {error && (
+        <Text fontSize="11px" color="red.500" mt={1} maxW="180px">
+          {error}
+        </Text>
+      )}
+      <Text fontSize="10px" color="text.muted" mt={1} maxW="180px" lineHeight={1.4}>
+        {helper}
+      </Text>
     </Box>
   );
 }
@@ -692,21 +707,22 @@ function VariantRow({
   errors: FieldErrors<FormValues>;
   t: (key: string) => string;
   variantImage: File | string | null;
-  onVariantImageChange: (size: SizeKey, img: File | null) => void;
+  onVariantImageChange: (size: SizeKey, img: File | string | null) => void;
 }) {
   const enabled = watch(`${size}.enabled` as const);
   const sizeErrors = errors[size] as Record<string, { message?: string }> | undefined;
+  const sizeLabel = t(`form.size${size[0].toUpperCase()}${size.slice(1)}`);
 
   return (
     <Box
-      p={3}
+      p={{ base: 4, md: 5 }}
       bg={enabled ? 'rgba(201,169,97,0.05)' : 'transparent'}
-      borderRadius="sm"
+      borderRadius="md"
       border="1px solid"
-      borderColor={enabled ? 'border.gold' : 'border.subtle'}
+      borderColor={sizeErrors?.price || sizeErrors?.image ? 'red.300' : enabled ? 'border.gold' : 'border.subtle'}
       transition="all 300ms"
     >
-      <Flex align="center" gap={4} wrap="wrap">
+      <Flex align={{ base: 'flex-start', md: 'center' }} justify="space-between" gap={4}>
         <Controller
           name={`${size}.enabled` as const}
           control={control}
@@ -715,15 +731,32 @@ function VariantRow({
               isChecked={field.value}
               onChange={(e) => field.onChange(e.target.checked)}
               colorScheme="yellow"
-              minW="80px"
+              alignItems="flex-start"
             >
-              <Text fontSize="13px" fontWeight={500} textTransform="capitalize">{size}</Text>
+              <Box>
+                <Text fontSize="14px" fontWeight={600}>{sizeLabel}</Text>
+                <Text fontSize="11px" color="text.muted" mt={0.5} lineHeight={1.4}>
+                  {enabled ? t('form.sizeEnabledHelper') : t('form.sizeDisabledHelper')}
+                </Text>
+              </Box>
             </Checkbox>
           )}
         />
-        {enabled && (
-          <>
-            <Box flex={1} minW="120px">
+        <Text
+          display={{ base: 'none', md: 'block' }}
+          fontSize="11px"
+          color={enabled ? 'accent.goldDeep' : 'text.muted'}
+          letterSpacing="0.16em"
+          textTransform="uppercase"
+          flexShrink={0}
+        >
+          {enabled ? t('form.enabled') : t('form.disabled')}
+        </Text>
+      </Flex>
+
+      {enabled && (
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mt={5} alignItems="start">
+          <Box>
               <Controller
                 name={`${size}.price` as const}
                 control={control}
@@ -737,34 +770,46 @@ function VariantRow({
                 )}
               />
             </Box>
+          <Box
+            bg="bg.surface"
+            border="1px solid"
+            borderColor="border.subtle"
+            borderRadius="md"
+            p={4}
+            minH="82px"
+          >
             <Controller
               name={`${size}.isAvailable` as const}
               control={control}
               render={({ field }) => (
-                <HStack spacing={2}>
+                <HStack spacing={3} align="flex-start">
                   <Switch
                     size="sm"
                     colorScheme="green"
                     isChecked={field.value}
                     onChange={(e) => field.onChange(e.target.checked)}
                   />
-                  <Text fontSize="12px" color="text.muted">{t('form.variantAvailable')}</Text>
+                  <Box>
+                    <Text fontSize="12px" fontWeight={500}>{t('form.variantAvailable')}</Text>
+                    <Text fontSize="11px" color="text.muted" mt={1} lineHeight={1.4}>
+                      {t('form.variantAvailableHelper')}
+                    </Text>
+                  </Box>
                 </HStack>
               )}
             />
-            <Box>
+          </Box>
+            <Box minW={0}>
               <VariantImagePicker
                 image={variantImage}
                 onChange={(img) => onVariantImageChange(size, img)}
                 label={t('form.variantImage')}
+                error={sizeErrors?.image?.message}
+                helper={t('form.variantImageHelper')}
               />
-              <Text fontSize="10px" color="text.muted" mt={1} maxW="80px" lineHeight={1.3} textAlign="center">
-                {t('form.variantImageHelper')}
-              </Text>
             </Box>
-          </>
-        )}
-      </Flex>
+        </SimpleGrid>
+      )}
     </Box>
   );
 }
@@ -772,27 +817,45 @@ function VariantRow({
 // ─── SectionCard ──────────────────────────────────────────────────────────────
 
 function SectionCard({
+  step,
   title,
   description,
   children,
 }: {
+  step: string;
   title: string;
   description?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Box bg="bg.surface" border="1px solid" borderColor="border.subtle" borderRadius="lg" overflow="hidden">
-      <Box px={6} py={5} borderBottom="1px solid" borderColor="border.subtle">
-        <Text fontFamily="heading" fontWeight={500} fontSize="20px" color="text.primary" lineHeight={1.2}>
-          {title}
-        </Text>
-        {description && (
-          <Text fontSize="12px" color="text.muted" mt={1.5} lineHeight={1.5}>
-            {description}
+      <Flex px={{ base: 5, md: 6 }} py={5} borderBottom="1px solid" borderColor="border.subtle" gap={4} align="flex-start">
+        <Box
+          w="32px"
+          h="32px"
+          borderRadius="full"
+          bg="warm.black"
+          color="accent.gold"
+          display="grid"
+          placeItems="center"
+          fontSize="13px"
+          fontWeight={600}
+          flexShrink={0}
+        >
+          {step}
+        </Box>
+        <Box>
+          <Text fontFamily="heading" fontWeight={500} fontSize="20px" color="text.primary" lineHeight={1.2}>
+            {title}
           </Text>
-        )}
-      </Box>
-      <Box p={6}>{children}</Box>
+          {description && (
+            <Text fontSize="12px" color="text.muted" mt={1.5} lineHeight={1.6}>
+              {description}
+            </Text>
+          )}
+        </Box>
+      </Flex>
+      <Box p={{ base: 5, md: 6 }}>{children}</Box>
     </Box>
   );
 }

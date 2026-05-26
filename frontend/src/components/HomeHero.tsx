@@ -27,7 +27,7 @@ export function HomeHero({ products, isLoading = false }: HomeHeroProps) {
   const { t } = useTranslation();
 
   const slides = useMemo(
-    () => products.filter((p) => p.styled_image || p.display_image),
+    () => products.filter((p) => p.styled_image),
     [products],
   );
 
@@ -37,7 +37,7 @@ export function HomeHero({ products, isLoading = false }: HomeHeroProps) {
   useEffect(() => {
     if (slides.length < 2) return;
     const next = slides[(carousel.currentIndex + 1) % slides.length];
-    const url = next.styled_image ?? next.display_image;
+    const url = next.styled_image;
     if (!url) return;
     const img = new Image();
     img.src = url;
