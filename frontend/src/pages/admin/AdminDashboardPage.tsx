@@ -22,7 +22,7 @@ import { Package, Plus, Star, Tag } from 'lucide-react';
 
 import StatCard from '../../components/admin/StatCard';
 import { adminProductsList, categoriesList, productsList } from '../../lib/api';
-import { localized } from '../../lib/format';
+import { formatPrice, localized } from '../../lib/format';
 import { getPrimaryVariantImage } from '../../lib/productImages';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -288,7 +288,7 @@ export default function AdminDashboardPage() {
                         </Text>
                       </Td>
                       <Td isNumeric>
-                        <Text fontSize="12px">SAR {p.base_price}</Text>
+                        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(p.base_price, lang)}</Text>
                       </Td>
                       <Td>
                         <HStack spacing={1} flexWrap="wrap">

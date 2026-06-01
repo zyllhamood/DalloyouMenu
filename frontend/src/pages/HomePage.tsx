@@ -4,13 +4,14 @@ import {
   SimpleGrid,
   Text,
 } from '@chakra-ui/react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 
 import HomeHero from '../components/HomeHero';
-import ProductsGrid from '../components/ProductsGrid';
+import ProductsGrid, { type ViewMode } from '../components/ProductsGrid';
 import SectionHeading from '../components/SectionHeading';
 import { categoriesList, featuredProducts, productsList } from '../lib/api';
 import { localized } from '../lib/format';
@@ -20,6 +21,7 @@ const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 export default function HomePage() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const [newArrivalsViewMode, setNewArrivalsViewMode] = useState<ViewMode>('grid');
 
   const featured = useQuery({
     queryKey: ['featuredProducts'],
@@ -108,6 +110,8 @@ export default function HomePage() {
           <ProductsGrid
             products={newArrivals.data?.results ?? []}
             isLoading={newArrivals.isLoading}
+            viewMode={newArrivalsViewMode}
+            onViewModeChange={setNewArrivalsViewMode}
             showViewToggle
           />
         </Box>

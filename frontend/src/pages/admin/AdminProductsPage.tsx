@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Box,
   Button,
+  Divider,
   Flex,
   HStack,
   Heading,
@@ -33,8 +34,11 @@ import { Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import { adminProductsList, categoriesList, productDelete, productPatch } from '../../lib/api';
 import type { Product } from '../../lib/api';
-import { localized } from '../../lib/format';
+import { formatPrice, localized } from '../../lib/format';
 import { getPrimaryVariantImage } from '../../lib/productImages';
+
+type TFn = (key: string) => string;
+type TogglePatch = { is_featured?: boolean; is_available?: boolean };
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 const PAGE_SIZE = 20;
@@ -64,6 +68,168 @@ function StatusBadge({ label, scheme }: { label: string; scheme: 'gold' | 'new' 
       {...styles}
     >
       {label}
+    </Box>
+  );
+}
+
+// ── Shared empty state (used by both the desktop table and mobile cards) ────
+
+function EmptyContent({
+  hasFilters,
+  onClear,
+  t,
+}: {
+  hasFilters: boolean;
+  onClear: () => void;
+  t: TFn;
+}) {
+  return (
+    <Stack spacing={3} align="center" py={8}>
+      <Box color="text.muted" opacity={0.35}><Package size={40} /></Box>
+      <Text fontSize="14px" color="text.muted">{t('noProducts')}</Text>
+      {hasFilters ? (
+        <Button size="sm" variant="ghostGold" onClick={onClear}>
+          {t('clearFilters')}
+        </Button>
+      ) : (
+        <Button as={RouterLink} to="/admin/products/new" size="sm" variant="goldOutline">
+          {t('addFirstProduct')}
+        </Button>
+      )}
+    </Stack>
+  );
+}
+
+// ── Mobile product card (replaces the cramped table on small screens) ───────
+
+function MobileProductCard({
+  product,
+  lang,
+  t,
+  onToggle,
+  onDelete,
+}: {
+  product: Product;
+  lang: string;
+  t: TFn;
+  onToggle: (id: number | string, patch: TogglePatch) => void;
+  onDelete: (p: Product) => void;
+}) {
+  const thumbnail = getPrimaryVariantImage(product);
+  const hasBadges = product.is_featured || product.is_new || !product.is_available;
+
+  return (
+    <Box
+      bg="bg.surface"
+      border="1px solid"
+      borderColor="border.subtle"
+      borderRadius="lg"
+      boxShadow="soft"
+      p={4}
+    >
+      <Flex gap={3} align="flex-start">
+        <Box
+          w="68px"
+          h="68px"
+          borderRadius="10px"
+          overflow="hidden"
+          bg="warm.cream"
+          border="1px solid"
+          borderColor="border.subtle"
+          flexShrink={0}
+        >
+          {thumbnail ? (
+            <Image src={thumbnail} alt="" w="100%" h="100%" objectFit="cover" loading="lazy" />
+          ) : (
+            <Box w="100%" h="100%" bg="border.subtle" />
+          )}
+        </Box>
+
+        <Box flex={1} minW={0}>
+          <Flex justify="space-between" align="flex-start" gap={2}>
+            <Box minW={0}>
+              <Text
+                as={RouterLink}
+                to={`/admin/products/${product.id}`}
+                fontSize="15px"
+                fontWeight={600}
+                color="text.primary"
+                noOfLines={1}
+                display="block"
+                _hover={{ color: 'accent.goldDeep' }}
+              >
+                {product.name_en}
+              </Text>
+              <Text fontSize="12px" color="text.muted" fontFamily="'El Messiri', serif" noOfLines={1}>
+                {product.name_ar}
+              </Text>
+            </Box>
+            <Text fontSize="14px" fontWeight={600} whiteSpace="nowrap" flexShrink={0}>
+              {formatPrice(product.base_price, lang)}
+            </Text>
+          </Flex>
+          <Text fontSize="11px" color="text.muted" mt={1} noOfLines={1}>
+            {localized(product.category.name_en, product.category.name_ar, lang)}
+          </Text>
+          {hasBadges && (
+            <HStack spacing={1.5} mt={2} flexWrap="wrap">
+              {product.is_featured && <StatusBadge label={t('filterFeatured')} scheme="gold" />}
+              {product.is_new && <StatusBadge label={t('filterNew')} scheme="new" />}
+              {!product.is_available && <StatusBadge label={t('filterUnavailable')} scheme="red" />}
+            </HStack>
+          )}
+        </Box>
+      </Flex>
+
+      <Divider my={3} borderColor="border.subtle" />
+
+      <Flex align="center" justify="space-between" gap={3}>
+        <HStack spacing={4}>
+          <HStack as="label" spacing={2} cursor="pointer">
+            <Switch
+              size="sm"
+              colorScheme="yellow"
+              isChecked={product.is_featured}
+              onChange={(e) => onToggle(product.id, { is_featured: e.target.checked })}
+            />
+            <Text fontSize="11px" color="text.muted">{t('table.featured')}</Text>
+          </HStack>
+          <HStack as="label" spacing={2} cursor="pointer">
+            <Switch
+              size="sm"
+              colorScheme="green"
+              isChecked={product.is_available}
+              onChange={(e) => onToggle(product.id, { is_available: e.target.checked })}
+            />
+            <Text fontSize="11px" color="text.muted">{t('table.available')}</Text>
+          </HStack>
+        </HStack>
+        <HStack spacing={1}>
+          <IconButton
+            as={RouterLink}
+            to={`/admin/products/${product.id}`}
+            aria-label={t('edit')}
+            icon={<Pencil size={15} />}
+            size="sm"
+            w="40px"
+            h="40px"
+            minW="40px"
+            variant="ghostGold"
+          />
+          <IconButton
+            aria-label={t('delete')}
+            icon={<Trash2 size={15} />}
+            size="sm"
+            w="40px"
+            h="40px"
+            minW="40px"
+            variant="ghostGold"
+            color="red.500"
+            _hover={{ bg: 'red.50', color: 'red.600' }}
+            onClick={() => onDelete(product)}
+          />
+        </HStack>
+      </Flex>
     </Box>
   );
 }
@@ -188,7 +354,11 @@ export default function AdminProductsPage() {
 
       {/* Filters */}
       <Flex gap={3} wrap="wrap" align="center">
-        <InputGroup maxW="240px" size="sm" flex={{ base: '1 1 160px', md: 'none' }}>
+        <InputGroup
+          size="sm"
+          maxW={{ base: '100%', md: '240px' }}
+          flex={{ base: '1 1 100%', md: 'none' }}
+        >
           <InputLeftElement pointerEvents="none" color="text.muted">
             <Search size={14} />
           </InputLeftElement>
@@ -247,8 +417,9 @@ export default function AdminProductsPage() {
         )}
       </Flex>
 
-      {/* Table */}
+      {/* Desktop table (md and up) */}
       <Box
+        display={{ base: 'none', md: 'block' }}
         bg="bg.surface"
         border="1px solid"
         borderColor="border.subtle"
@@ -283,20 +454,8 @@ export default function AdminProductsPage() {
                 : (products.data?.results ?? []).length === 0
                 ? (
                     <Tr>
-                      <Td colSpan={8} textAlign="center" py={12}>
-                        <Stack spacing={3} align="center">
-                          <Box color="text.muted" opacity={0.35}><Package size={40} /></Box>
-                          <Text fontSize="14px" color="text.muted">{t('noProducts')}</Text>
-                          {hasFilters ? (
-                            <Button size="sm" variant="ghostGold" onClick={clearFilters}>
-                              {t('clearFilters')}
-                            </Button>
-                          ) : (
-                            <Button as={RouterLink} to="/admin/products/new" size="sm" variant="goldOutline">
-                              {t('addFirstProduct')}
-                            </Button>
-                          )}
-                        </Stack>
+                      <Td colSpan={8} textAlign="center" py={4}>
+                        <EmptyContent hasFilters={hasFilters} onClear={clearFilters} t={t} />
                       </Td>
                     </Tr>
                   )
@@ -336,7 +495,7 @@ export default function AdminProductsPage() {
                       </Td>
                       {/* Price */}
                       <Td isNumeric>
-                        <Text fontSize="12px">SAR {p.base_price}</Text>
+                        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(p.base_price, lang)}</Text>
                       </Td>
                       {/* Status badges */}
                       <Td>
@@ -410,31 +569,77 @@ export default function AdminProductsPage() {
             </Tbody>
           </Table>
         </Box>
+      </Box>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Flex
-            px={6}
-            py={3}
-            borderTop="1px solid"
-            borderColor="border.subtle"
-            align="center"
-            justify="space-between"
-          >
-            <Text fontSize="12px" color="text.muted">
-              {t('page', { page, total: totalPages })}
-            </Text>
-            <HStack spacing={2}>
-              <Button size="xs" variant="goldOutline" isDisabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                {t('prev')}
-              </Button>
-              <Button size="xs" variant="goldOutline" isDisabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                {t('next')}
-              </Button>
-            </HStack>
-          </Flex>
+      {/* Mobile cards (below md) */}
+      <Box display={{ base: 'block', md: 'none' }}>
+        {products.isLoading ? (
+          <Stack spacing={3}>
+            {[0, 1, 2, 3].map((i) => (
+              <Box
+                key={i}
+                bg="bg.surface"
+                border="1px solid"
+                borderColor="border.subtle"
+                borderRadius="lg"
+                p={4}
+              >
+                <Flex gap={3}>
+                  <Skeleton w="68px" h="68px" borderRadius="10px" startColor="warm.cream" endColor="border.subtle" />
+                  <Box flex={1}>
+                    <Skeleton h="14px" w="70%" mb={2} startColor="warm.cream" endColor="border.subtle" />
+                    <Skeleton h="11px" w="40%" mb={3} startColor="warm.cream" endColor="border.subtle" />
+                    <Skeleton h="11px" w="30%" startColor="warm.cream" endColor="border.subtle" />
+                  </Box>
+                </Flex>
+              </Box>
+            ))}
+          </Stack>
+        ) : (products.data?.results ?? []).length === 0 ? (
+          <Box bg="bg.surface" border="1px solid" borderColor="border.subtle" borderRadius="lg">
+            <EmptyContent hasFilters={hasFilters} onClear={clearFilters} t={t} />
+          </Box>
+        ) : (
+          <Stack spacing={3}>
+            {(products.data?.results ?? []).map((p) => (
+              <MobileProductCard
+                key={p.id}
+                product={p}
+                lang={lang}
+                t={t}
+                onToggle={(id, patch) => toggleMutation.mutate({ id, patch })}
+                onDelete={(prod) => { setDeleteTarget(prod); openConfirm(); }}
+              />
+            ))}
+          </Stack>
         )}
       </Box>
+
+      {/* Pagination (shared across both layouts) */}
+      {totalPages > 1 && (
+        <Flex
+          bg="bg.surface"
+          border="1px solid"
+          borderColor="border.subtle"
+          borderRadius="lg"
+          px={{ base: 4, md: 6 }}
+          py={3}
+          align="center"
+          justify="space-between"
+        >
+          <Text fontSize="12px" color="text.muted">
+            {t('page', { page, total: totalPages })}
+          </Text>
+          <HStack spacing={2}>
+            <Button size="xs" variant="goldOutline" isDisabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              {t('prev')}
+            </Button>
+            <Button size="xs" variant="goldOutline" isDisabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+              {t('next')}
+            </Button>
+          </HStack>
+        </Flex>
+      )}
 
       <ConfirmModal
         isOpen={confirmOpen}

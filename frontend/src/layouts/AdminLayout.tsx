@@ -13,13 +13,13 @@ import {
   IconButton,
   Stack,
   Text,
-  Tooltip,
   VStack,
 } from '@chakra-ui/react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronRight,
+  ExternalLink,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -51,31 +51,34 @@ const NAV_ITEMS: NavItem[] = [
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────
 
+type Crumb = { label: string; to?: string };
+type TFn = (key: string) => string;
+
+/** Shared crumb resolver — used by the breadcrumb (desktop) and the
+ *  page title (mobile topbar) so both stay in sync. */
+function getCrumbs(path: string, t: TFn): Crumb[] {
+  if (path === '/admin' || path === '/admin/') {
+    return [{ label: t('dashboard') }];
+  }
+  if (path === '/admin/products/new') {
+    return [{ label: t('products'), to: '/admin/products' }, { label: t('addProduct') }];
+  }
+  if (/^\/admin\/products\/\d+/.test(path)) {
+    return [{ label: t('products'), to: '/admin/products' }, { label: t('edit') }];
+  }
+  if (path.startsWith('/admin/products')) {
+    return [{ label: t('products') }];
+  }
+  if (path.startsWith('/admin/categories')) {
+    return [{ label: t('categories') }];
+  }
+  return [];
+}
+
 function AdminBreadcrumb() {
   const location = useLocation();
   const { t } = useTranslation('admin');
-  const path = location.pathname;
-
-  type Crumb = { label: string; to?: string };
-  let crumbs: Crumb[] = [];
-
-  if (path === '/admin' || path === '/admin/') {
-    crumbs = [{ label: t('dashboard') }];
-  } else if (path === '/admin/products/new') {
-    crumbs = [
-      { label: t('products'), to: '/admin/products' },
-      { label: t('addProduct') },
-    ];
-  } else if (/^\/admin\/products\/\d+/.test(path)) {
-    crumbs = [
-      { label: t('products'), to: '/admin/products' },
-      { label: t('edit') },
-    ];
-  } else if (path.startsWith('/admin/products')) {
-    crumbs = [{ label: t('products') }];
-  } else if (path.startsWith('/admin/categories')) {
-    crumbs = [{ label: t('categories') }];
-  }
+  const crumbs = getCrumbs(location.pathname, t);
 
   if (!crumbs.length) return null;
 
@@ -137,7 +140,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       </Box>
 
       {/* Nav items */}
-      <VStack as="nav" align="stretch" spacing={0.5} flex={1}>
+      <VStack as="nav" align="stretch" spacing={1} flex={1}>
         {NAV_ITEMS.map((item) => (
           <Box
             key={item.to}
@@ -149,12 +152,13 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             alignItems="center"
             gap={3}
             px={3}
-            py="10px"
+            py={3}
+            minH="44px"
             borderRadius="8px"
             fontSize="13px"
             letterSpacing="0.1em"
             color="rgba(255,255,255,0.65)"
-            transition="all 250ms"
+            transition="all 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
             _hover={{
               bg: 'rgba(201,169,97,0.1)',
               color: 'rgba(255,255,255,0.9)',
@@ -177,37 +181,61 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         ))}
       </VStack>
 
+      {/* View public site */}
+      <Box
+        as="a"
+        href="/"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+        display="flex"
+        alignItems="center"
+        gap={3}
+        px={3}
+        py={3}
+        minH="44px"
+        mb={1}
+        borderRadius="8px"
+        fontSize="13px"
+        letterSpacing="0.1em"
+        color="rgba(255,255,255,0.6)"
+        transition="all 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+        _hover={{ bg: 'rgba(201,169,97,0.1)', color: 'rgba(255,255,255,0.9)', textDecoration: 'none' }}
+      >
+        <ExternalLink size={15} />
+        {t('viewSite')}
+      </Box>
+
       {/* User + logout */}
-      <Stack spacing={0} pt={4} borderTop="1px solid rgba(201,169,97,0.2)">
+      <Stack spacing={1} pt={3} borderTop="1px solid rgba(201,169,97,0.2)">
         {/* Username */}
-        <HStack spacing={2} px={3} py={2.5} opacity={0.55}>
+        <HStack spacing={2} px={3} py={2} opacity={0.55}>
           <User size={13} />
           <Text fontSize="11px" letterSpacing="0.06em" noOfLines={1}>
             {displayName}
           </Text>
         </HStack>
         {/* Logout */}
-        <Tooltip label={t('logout')} placement="right" hasArrow openDelay={400}>
-          <Box
-            as="button"
-            display="flex"
-            alignItems="center"
-            gap={3}
-            px={3}
-            py="10px"
-            borderRadius="8px"
-            fontSize="13px"
-            letterSpacing="0.1em"
-            color="rgba(255,255,255,0.55)"
-            _hover={{ bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.9)' }}
-            transition="all 250ms"
-            onClick={handleLogout}
-            w="100%"
-          >
-            <LogOut size={15} />
-            {t('logout')}
-          </Box>
-        </Tooltip>
+        <Box
+          as="button"
+          display="flex"
+          alignItems="center"
+          gap={3}
+          px={3}
+          py={3}
+          minH="44px"
+          borderRadius="8px"
+          fontSize="13px"
+          letterSpacing="0.1em"
+          color="rgba(255,255,255,0.6)"
+          _hover={{ bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.9)' }}
+          transition="all 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+          onClick={handleLogout}
+          w="100%"
+        >
+          <LogOut size={15} />
+          {t('logout')}
+        </Box>
       </Stack>
     </Flex>
   );
@@ -219,8 +247,11 @@ export function AdminLayout() {
   useDirection();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t } = useTranslation('admin');
+  const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const displayName = user?.name ?? user?.email?.split('@')[0] ?? '—';
+  const crumbs = getCrumbs(location.pathname, t);
+  const pageTitle = crumbs.length ? crumbs[crumbs.length - 1].label : t('pageTitle');
 
   return (
     <Flex minH="100vh" bg="bg.canvas">
@@ -266,9 +297,11 @@ export function AdminLayout() {
           <HStack spacing={3} minW={0}>
             <IconButton
               display={{ base: 'inline-flex', md: 'none' }}
-              aria-label={drawerOpen ? t('cancel') : 'Open menu'}
+              aria-label={drawerOpen ? t('closeMenu') : t('openMenu')}
               variant="ghostGold"
               size="sm"
+              w="40px"
+              h="40px"
               icon={drawerOpen ? <X size={18} /> : <Menu size={18} />}
               onClick={() => setDrawerOpen((v) => !v)}
               flexShrink={0}
@@ -276,15 +309,15 @@ export function AdminLayout() {
             <Box display={{ base: 'none', sm: 'block' }}>
               <AdminBreadcrumb />
             </Box>
-            {/* Mobile: just page title */}
+            {/* Mobile: current page title (mirrors the breadcrumb's last crumb) */}
             <Text
               display={{ base: 'block', sm: 'none' }}
-              fontSize="14px"
-              fontWeight={500}
+              fontSize="15px"
+              fontWeight={600}
               color="text.primary"
               noOfLines={1}
             >
-              {t('pageTitle')}
+              {pageTitle}
             </Text>
           </HStack>
 

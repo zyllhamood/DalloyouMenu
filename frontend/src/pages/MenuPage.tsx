@@ -144,14 +144,6 @@ export default function MenuPage() {
     );
   };
 
-  const clearFilters = () => {
-    setSearch('');
-    setSizes(new Set());
-    navigate('/menu');
-  };
-
-  const hasFilters = Boolean(activeCategory || search || sizes.size);
-
   return (
     <>
       <Helmet>
@@ -239,28 +231,17 @@ export default function MenuPage() {
                 <ViewToggleButton
                   icon={<LayoutGrid size={16} />}
                   active={viewMode === 'grid'}
-                  label="Grid view"
+                  label={t('view.grid')}
                   onClick={() => handleViewMode('grid')}
                 />
                 <ViewToggleButton
                   icon={<List size={16} />}
                   active={viewMode === 'list'}
-                  label="List view"
+                  label={t('view.list')}
                   onClick={() => handleViewMode('list')}
                 />
               </HStack>
-              {hasFilters && (
-                <Button size="sm" variant="ghostGold" onClick={clearFilters} display={{ base: 'none', md: 'inline-flex' }}>
-                  {t('filters.clear')}
-                </Button>
-              )}
             </Flex>
-
-            {hasFilters && (
-              <Button size="sm" variant="ghostGold" onClick={clearFilters} display={{ base: 'inline-flex', md: 'none' }} alignSelf="flex-start">
-                {t('filters.clear')}
-              </Button>
-            )}
           </Flex>
         </Container>
       </Box>

@@ -89,6 +89,12 @@ const overrides: ThemeOverride = {
         animation: 'dyShimmer 1.6s ease-in-out infinite',
       },
       '@media (prefers-reduced-motion: reduce)': {
+        '*, *::before, *::after': {
+          animationDuration: '0.01ms !important',
+          animationIterationCount: '1 !important',
+          transitionDuration: '0.01ms !important',
+          scrollBehavior: 'auto !important',
+        },
         '.dy-shimmer': { animation: 'none' },
       },
     },
@@ -195,6 +201,12 @@ const overrides: ThemeOverride = {
         },
       },
     },
+    // Unify form-control focus to brand gold (instead of Chakra's default blue)
+    // across every page. Inline `_focus` overrides still win where set.
+    Input: { defaultProps: { focusBorderColor: 'brand.500' } },
+    Textarea: { defaultProps: { focusBorderColor: 'brand.500' } },
+    NumberInput: { defaultProps: { focusBorderColor: 'brand.500' } },
+    Select: { defaultProps: { focusBorderColor: 'brand.500' } },
   },
 };
 

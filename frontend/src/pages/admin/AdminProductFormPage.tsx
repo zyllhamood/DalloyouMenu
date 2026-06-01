@@ -17,6 +17,7 @@ import {
   Stack,
   Switch,
   Text,
+  VStack,
   useToast,
 } from '@chakra-ui/react';
 import { Controller, useForm } from 'react-hook-form';
@@ -26,6 +27,7 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { AlertCircle, Check, ImagePlus, RefreshCw } from 'lucide-react';
 
 import ImageDropZone from '../../components/admin/ImageDropZone';
 import { TextField, TextareaField, NumberField } from '../../components/admin/AdminFormField';
@@ -388,10 +390,22 @@ export default function AdminProductFormPage() {
                   <Text fontSize="11px" color="text.muted" lineHeight={1.5} mb={4}>
                     {t('form.variantSectionHelper')}
                   </Text>
-                  {errors.hasVariants?.message && (
-                    <Text fontSize="12px" color="red.500" mb={4}>
-                      {errors.hasVariants.message}
-                    </Text>
+                  {errors.hasVariants && (
+                    <HStack
+                      spacing={2}
+                      align="flex-start"
+                      mb={4}
+                      p={3}
+                      bg="red.50"
+                      border="1px solid"
+                      borderColor="red.200"
+                      borderRadius="md"
+                    >
+                      <Box color="red.500" mt="1px" flexShrink={0}><AlertCircle size={16} /></Box>
+                      <Text fontSize="12px" color="red.600" lineHeight={1.5}>
+                        {t('form.atLeastOneSize')}
+                      </Text>
+                    </HStack>
                   )}
                   <Stack spacing={3}>
                     {SIZES.map((size) => (
@@ -614,9 +628,10 @@ interface VariantImagePickerProps {
   label: string;
   error?: string;
   helper: string;
+  t: (key: string) => string;
 }
 
-function VariantImagePicker({ image, onChange, label, error, helper }: VariantImagePickerProps) {
+function VariantImagePicker({ image, onChange, label, error, helper, t }: VariantImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -633,37 +648,83 @@ function VariantImagePicker({ image, onChange, label, error, helper }: VariantIm
 
   return (
     <Box flexShrink={0}>
-      <Text fontSize="11px" color="text.muted" mb={1.5} letterSpacing="0.06em">
-        {label}
-      </Text>
+      <HStack mb={1.5} spacing={1.5}>
+        <Text fontSize="11px" fontWeight={500} color="text.primary" letterSpacing="0.04em">
+          {label}
+        </Text>
+        <Text as="span" color="red.400" fontSize="11px" lineHeight={1}>*</Text>
+      </HStack>
       <Box
-        w="80px"
-        h="80px"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
+        w="104px"
+        h="104px"
         borderRadius="md"
-        border="1px dashed"
+        border="1.5px dashed"
         borderColor={error ? 'red.400' : preview ? 'accent.gold' : 'border.subtle'}
         bg="bg.canvas"
         overflow="hidden"
         cursor="pointer"
         position="relative"
-        transition="border-color 200ms"
+        transition="border-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
         onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
         _hover={{ borderColor: 'accent.goldDeep' }}
+        _focusVisible={{ outline: '2px solid', outlineColor: 'accent.gold', outlineOffset: '2px' }}
+        sx={{ '&:hover .dy-variant-overlay': { opacity: 1 } }}
         role="button"
+        tabIndex={0}
         aria-label={label}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
       >
         {preview ? (
-          <Box
-            as="img"
-            src={preview}
-            alt=""
-            sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
+          <>
+            <Box
+              as="img"
+              src={preview}
+              alt=""
+              sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+            {/* Set indicator */}
+            <Box
+              position="absolute"
+              top="4px"
+              insetInlineEnd="4px"
+              w="20px"
+              h="20px"
+              borderRadius="full"
+              bg="accent.gold"
+              color="warm.black"
+              display="grid"
+              placeItems="center"
+            >
+              <Check size={13} />
+            </Box>
+            {/* Replace overlay on hover */}
+            <Box
+              className="dy-variant-overlay"
+              position="absolute"
+              inset={0}
+              bg="rgba(26,26,26,0.5)"
+              color="white"
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              gap={1}
+              opacity={0}
+              transition="opacity 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+              pointerEvents="none"
+            >
+              <RefreshCw size={16} />
+              <Text fontSize="10px" fontWeight={600}>{t('form.changeImage')}</Text>
+            </Box>
+          </>
         ) : (
-          <Text color="text.muted" fontSize="22px" lineHeight={1}>+</Text>
+          <VStack spacing={1} color={error ? 'red.400' : 'text.muted'}>
+            <ImagePlus size={22} />
+            <Text fontSize="10px" fontWeight={500}>{t('form.addPhoto')}</Text>
+          </VStack>
         )}
       </Box>
       <Box
@@ -678,14 +739,16 @@ function VariantImagePicker({ image, onChange, label, error, helper }: VariantIm
           e.currentTarget.value = '';
         }}
       />
-      {error && (
-        <Text fontSize="11px" color="red.500" mt={1} maxW="180px">
-          {error}
+      {error ? (
+        <HStack spacing={1} mt={1.5} maxW="180px" align="center">
+          <Box color="red.500" flexShrink={0}><AlertCircle size={12} /></Box>
+          <Text fontSize="11px" color="red.500">{error}</Text>
+        </HStack>
+      ) : (
+        <Text fontSize="10px" color="text.muted" mt={1.5} maxW="180px" lineHeight={1.4}>
+          {helper}
         </Text>
       )}
-      <Text fontSize="10px" color="text.muted" mt={1} maxW="180px" lineHeight={1.4}>
-        {helper}
-      </Text>
     </Box>
   );
 }
@@ -765,7 +828,7 @@ function VariantRow({
                     label={t('form.variantPrice') + ' (SAR)'}
                     value={field.value ?? 0}
                     onChange={field.onChange}
-                    error={sizeErrors?.price?.message}
+                    error={sizeErrors?.price ? t('form.variantPriceRequired') : undefined}
                   />
                 )}
               />
@@ -804,8 +867,9 @@ function VariantRow({
                 image={variantImage}
                 onChange={(img) => onVariantImageChange(size, img)}
                 label={t('form.variantImage')}
-                error={sizeErrors?.image?.message}
+                error={sizeErrors?.image ? t('form.variantImageRequired') : undefined}
                 helper={t('form.variantImageHelper')}
+                t={t}
               />
             </Box>
         </SimpleGrid>

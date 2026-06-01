@@ -97,6 +97,9 @@ function EmptyState() {
       <Text fontFamily="heading" fontSize="22px" color="text.primary">
         {t('product.empty')}
       </Text>
+      <Text fontSize="14px" color="text.muted" mt={2}>
+        {t('product.emptyHint')}
+      </Text>
     </Box>
   );
 }
@@ -123,6 +126,7 @@ export function ProductsGrid({
   viewMode: viewModeProp,
   onViewModeChange,
 }: ProductsGridProps) {
+  const { t } = useTranslation();
   const [internalMode, setInternalMode] = useState<ViewMode>(readStoredViewMode);
 
   const isControlled = viewModeProp !== undefined;
@@ -153,13 +157,13 @@ export function ProductsGrid({
           <ViewToggleButton
             icon={<LayoutGrid size={16} />}
             active={viewMode === 'grid'}
-            label="Grid view"
+            label={t('view.grid')}
             onClick={() => handleChange('grid')}
           />
           <ViewToggleButton
             icon={<List size={16} />}
             active={viewMode === 'list'}
-            label="List view"
+            label={t('view.list')}
             onClick={() => handleChange('list')}
           />
         </Box>

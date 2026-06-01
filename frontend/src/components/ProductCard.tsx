@@ -10,7 +10,7 @@ import { getPrimaryVariantImage } from '../lib/productImages';
 interface ProductCardProps {
   product: Product;
   eager?: boolean;
-  /** When true (mobile list mode) the image aspect ratio is 4:3 instead of 4:5 */
+  /** When true, the parent grid renders this card as a single full-width column */
   listMode?: boolean;
 }
 
@@ -38,9 +38,40 @@ function formatCardPrice(product: Product, lang: string): string {
   if (maxPrice !== null && maxPrice !== undefined && maxPrice > minPrice) {
     const min = compactPrice(minPrice);
     const max = compactPrice(maxPrice);
-    return lang.startsWith('ar') ? `${min} - ${max} ر.س` : `SAR ${min} - ${max}`;
+    // Wrap the numeric range in an LTR isolate (LRI…PDI) so the bidi algorithm
+    // keeps "min - max" in order inside the RTL line (otherwise it flips to
+    // read "max - min"). Harmless in LTR.
+    return lang.startsWith('ar') ? `\u2066${min} - ${max}\u2069 ر.س` : `SAR ${min} - ${max}`;
   }
   return formatPrice(minPrice, lang);
+}
+
+// ── Small gold "New" pill, anchored to the image's leading-top corner ──────────
+function NewBadge({ label }: { label: string }) {
+  return (
+    <Box
+      position="absolute"
+      top={3}
+      insetInlineStart={3}
+      zIndex={2}
+      bg="rgba(250,248,243,0.92)"
+      backdropFilter="blur(4px)"
+      color="accent.goldDeep"
+      border="1px solid"
+      borderColor="border.gold"
+      px={2.5}
+      py={1}
+      borderRadius="full"
+      fontSize="9px"
+      fontWeight={600}
+      letterSpacing="0.18em"
+      textTransform="uppercase"
+      lineHeight={1}
+      pointerEvents="none"
+    >
+      {label}
+    </Box>
+  );
 }
 
 export function ProductCard({ product, eager = false }: ProductCardProps) {
@@ -51,8 +82,61 @@ export function ProductCard({ product, eager = false }: ProductCardProps) {
   const catName = localized(product.category.name_en, product.category.name_ar, lang);
   const price = formatCardPrice(product, lang);
   const unavailable = !product.is_available;
+  const isNew = Boolean(product.is_new) && !unavailable;
   const primaryImage = useMemo(() => getPrimaryVariantImage(product), [product]);
 
+  const ImageInner = (
+    <>
+      {primaryImage ? (
+        <Box
+          as="img"
+          src={primaryImage}
+          alt={name}
+          loading={eager ? 'eager' : 'lazy'}
+          sx={{
+            objectFit: 'cover',
+            objectPosition: 'center',
+            width: '100%',
+            height: '100%',
+            filter: unavailable ? 'grayscale(1) opacity(0.6)' : 'none',
+            transition: 'transform 600ms ease-out',
+            '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+          }}
+          _groupHover={unavailable ? undefined : { transform: 'scale(1.04)' }}
+        />
+      ) : (
+        <Box bg="border.subtle" opacity={0.45} w="100%" h="100%" />
+      )}
+    </>
+  );
+
+  const UnavailableTag = unavailable ? (
+    <Box
+      position="absolute"
+      inset={0}
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      pointerEvents="none"
+    >
+      <Box
+        bg="rgba(26,26,26,0.85)"
+        color="accent.gold"
+        px={4}
+        py={2}
+        borderRadius="sm"
+        border="1px solid"
+        borderColor="accent.gold"
+        fontSize="11px"
+        letterSpacing="0.24em"
+        textTransform="uppercase"
+      >
+        {t('product.unavailable')}
+      </Box>
+    </Box>
+  ) : null;
+
+  // ── Vertical product card ───────────────────────────────────────────────────
   return (
     <LinkBox
       as="article"
@@ -83,53 +167,11 @@ export function ProductCard({ product, eager = false }: ProductCardProps) {
           * "4 / 3" (boxier), "16 / 9" (wide).
           */}
         <AspectRatio ratio={5 / 4}>
-          {primaryImage ? (
-            <Box
-              as="img"
-              src={primaryImage}
-              alt={name}
-              loading={eager ? 'eager' : 'lazy'}
-              sx={{
-                objectFit: 'cover',
-                objectPosition: 'center',
-                width: '100%',
-                height: '100%',
-                filter: unavailable ? 'grayscale(1) opacity(0.6)' : 'none',
-                transition: 'transform 600ms ease-out',
-                '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-              }}
-              _groupHover={unavailable ? undefined : { transform: 'scale(1.04)' }}
-            />
-          ) : (
-            <Box bg="border.subtle" opacity={0.45} />
-          )}
+          <Box>{ImageInner}</Box>
         </AspectRatio>
 
-        {unavailable && (
-          <Box
-            position="absolute"
-            inset={0}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            pointerEvents="none"
-          >
-            <Box
-              bg="rgba(26,26,26,0.85)"
-              color="accent.gold"
-              px={4}
-              py={2}
-              borderRadius="sm"
-              border="1px solid"
-              borderColor="accent.gold"
-              fontSize="11px"
-              letterSpacing="0.24em"
-              textTransform="uppercase"
-            >
-              {t('product.unavailable')}
-            </Box>
-          </Box>
-        )}
+        {isNew && <NewBadge label={t('product.new')} />}
+        {UnavailableTag}
       </Box>
 
       <Box p={{ base: 5, md: 6 }}>
@@ -146,12 +188,13 @@ export function ProductCard({ product, eager = false }: ProductCardProps) {
           as={unavailable ? 'span' : RouterLink}
           {...(unavailable ? {} : { to: `/product/${product.id}` })}
           fontFamily="heading"
-          fontSize="27px"
+          fontSize={{ base: '22px', md: '27px' }}
           fontWeight={500}
           color="text.primary"
           lineHeight={1.2}
           display="block"
           mb={3}
+          noOfLines={2}
         >
           {name}
         </LinkOverlay>

@@ -27,7 +27,11 @@
     "selectSize": "Choose a size",
     "searchPlaceholder": "Search the menu",
     "allCategories": "All",
-    "empty": "No items found."
+    "empty": "No items found.",
+    "emptyHint": "Try adjusting your search or filters.",
+    "new": "New",
+    "zoomClose": "Close",
+    "zoomHint": "Tap to zoom"
   },
   "sizes": {
     "small": "Small",
@@ -39,10 +43,24 @@
     "open": "Filters",
     "clear": "Clear filters"
   },
+  "view": {
+    "grid": "Grid view",
+    "list": "List view"
+  },
+  "a11y": {
+    "goToSlide": "Go to slide {{n}}"
+  },
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong.",
+    "errorBody": "We couldn't load this page. Please try again.",
     "retry": "Try Again"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "subtitle": "The page you're looking for doesn't exist or has moved.",
+    "backHome": "Back to Home",
+    "browseMenu": "Browse the Menu"
   },
   "brand": {
     "name": "Dalloyou",

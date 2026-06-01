@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
+  Divider,
   Flex,
   FormControl,
   FormLabel,
@@ -14,6 +15,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Skeleton,
   Stack,
   Switch,
   Table,
@@ -23,6 +25,7 @@ import {
   Th,
   Thead,
   Tr,
+  useBreakpointValue,
   useDisclosure,
   useToast,
 } from '@chakra-ui/react';
@@ -47,7 +50,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import type { Resolver } from 'react-hook-form';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Tag, Trash2 } from 'lucide-react';
 
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import { categoriesList, categoryCreate, categoryUpdate, categoryDelete } from '../../lib/api';
@@ -56,6 +59,8 @@ import { slugify } from '../../lib/format';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 const FOCUS = { borderColor: 'accent.gold', boxShadow: '0 0 0 1px rgba(201,169,97,0.4)' };
+
+type TFn = (key: string) => string;
 
 // ─── Drag glyph ───────────────────────────────────────────────────────────────
 
@@ -66,6 +71,31 @@ function DragGlyph() {
         d="M9 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6-16a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"
         fill="currentColor"
       />
+    </Box>
+  );
+}
+
+// Small active / inactive status pill (shared by table row + mobile card)
+function StatusPill({ active, t }: { active: boolean; t: TFn }) {
+  return (
+    <Box
+      display="inline-flex"
+      alignItems="center"
+      gap={1.5}
+      px={2}
+      py={0.5}
+      borderRadius="full"
+      fontSize="10px"
+      fontWeight={600}
+      letterSpacing="0.08em"
+      textTransform="uppercase"
+      bg={active ? 'rgba(201,169,97,0.12)' : 'bg.canvas'}
+      color={active ? 'accent.goldDeep' : 'text.muted'}
+      border="1px solid"
+      borderColor={active ? 'border.gold' : 'border.subtle'}
+    >
+      <Box w="6px" h="6px" borderRadius="full" bg={active ? 'accent.gold' : 'text.muted'} />
+      {active ? t('table.active') : t('statusInactive')}
     </Box>
   );
 }
@@ -105,8 +135,24 @@ function SortableRow({
 
   return (
     <Tr ref={setNodeRef} style={style} _hover={{ bg: 'bg.canvas' }}>
-      <Td w="40px" cursor="grab" {...attributes} {...listeners} color="text.muted" px={3}>
-        <DragGlyph />
+      <Td w="48px" px={2}>
+        <Box
+          {...attributes}
+          {...listeners}
+          aria-label={t('catForm.reorderHint')}
+          display="grid"
+          placeItems="center"
+          w="32px"
+          h="32px"
+          borderRadius="8px"
+          color="text.muted"
+          cursor="grab"
+          sx={{ touchAction: 'none', '&:active': { cursor: 'grabbing' } }}
+          _hover={{ bg: 'bg.surface', color: 'accent.goldDeep' }}
+          transition="all 200ms"
+        >
+          <DragGlyph />
+        </Box>
       </Td>
       <Td>
         <Text fontSize="13px" fontWeight={500}>{cat.name_en}</Text>
@@ -118,26 +164,36 @@ function SortableRow({
         <Text fontSize="11px" color="text.muted" fontFamily="monospace">{cat.slug}</Text>
       </Td>
       <Td>
-        <Switch
-          size="sm"
-          colorScheme="green"
-          isChecked={cat.is_active !== false}
-          onChange={(e) => onToggleActive(cat, e.target.checked)}
-        />
+        <HStack spacing={2.5}>
+          <Switch
+            size="sm"
+            colorScheme="green"
+            isChecked={cat.is_active !== false}
+            onChange={(e) => onToggleActive(cat, e.target.checked)}
+            aria-label={t('table.active')}
+          />
+          <StatusPill active={cat.is_active !== false} t={t} />
+        </HStack>
       </Td>
       <Td>
         <HStack spacing={1}>
           <IconButton
             aria-label={t('edit')}
-            icon={<Pencil size={13} />}
-            size="xs"
+            icon={<Pencil size={14} />}
+            size="sm"
+            w="34px"
+            h="34px"
+            minW="34px"
             variant="ghostGold"
             onClick={() => onEdit(cat)}
           />
           <IconButton
             aria-label={t('delete')}
-            icon={<Trash2 size={13} />}
-            size="xs"
+            icon={<Trash2 size={14} />}
+            size="sm"
+            w="34px"
+            h="34px"
+            minW="34px"
             variant="ghostGold"
             color="red.500"
             _hover={{ bg: 'red.50', color: 'red.600' }}
@@ -146,6 +202,114 @@ function SortableRow({
         </HStack>
       </Td>
     </Tr>
+  );
+}
+
+// ─── Sortable card (mobile) ─────────────────────────────────────────────────
+
+function SortableCard({
+  cat,
+  onEdit,
+  onDelete,
+  onToggleActive,
+}: {
+  cat: Category;
+  onEdit: (c: Category) => void;
+  onDelete: (c: Category) => void;
+  onToggleActive: (c: Category, val: boolean) => void;
+}) {
+  const { t } = useTranslation('admin');
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+  const active = cat.is_active !== false;
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+    boxShadow: isDragging ? '0 12px 32px rgba(168,138,77,0.2)' : undefined,
+  };
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      bg="bg.surface"
+      border="1px solid"
+      borderColor="border.subtle"
+      borderRadius="lg"
+      boxShadow="soft"
+      p={3}
+    >
+      <Flex align="center" gap={2}>
+        <Box
+          {...attributes}
+          {...listeners}
+          aria-label={t('catForm.reorderHint')}
+          display="grid"
+          placeItems="center"
+          w="40px"
+          h="40px"
+          flexShrink={0}
+          borderRadius="8px"
+          color="text.muted"
+          cursor="grab"
+          sx={{ touchAction: 'none', '&:active': { cursor: 'grabbing' } }}
+          _hover={{ bg: 'bg.canvas', color: 'accent.goldDeep' }}
+          transition="all 200ms"
+        >
+          <DragGlyph />
+        </Box>
+
+        <Box flex={1} minW={0}>
+          <Text fontSize="14px" fontWeight={600} noOfLines={1}>{cat.name_en}</Text>
+          <Text fontSize="12px" color="text.muted" fontFamily="'El Messiri', serif" noOfLines={1}>
+            {cat.name_ar}
+          </Text>
+          <Text fontSize="10px" color="text.muted" fontFamily="monospace" mt={0.5} noOfLines={1}>
+            {cat.slug}
+          </Text>
+        </Box>
+
+        <HStack spacing={1} flexShrink={0}>
+          <IconButton
+            aria-label={t('edit')}
+            icon={<Pencil size={15} />}
+            size="sm"
+            w="40px"
+            h="40px"
+            minW="40px"
+            variant="ghostGold"
+            onClick={() => onEdit(cat)}
+          />
+          <IconButton
+            aria-label={t('delete')}
+            icon={<Trash2 size={15} />}
+            size="sm"
+            w="40px"
+            h="40px"
+            minW="40px"
+            variant="ghostGold"
+            color="red.500"
+            _hover={{ bg: 'red.50', color: 'red.600' }}
+            onClick={() => onDelete(cat)}
+          />
+        </HStack>
+      </Flex>
+
+      <Divider my={3} borderColor="border.subtle" />
+
+      <Flex align="center" justify="space-between">
+        <StatusPill active={active} t={t} />
+        <Switch
+          size="sm"
+          colorScheme="green"
+          isChecked={active}
+          onChange={(e) => onToggleActive(cat, e.target.checked)}
+          aria-label={t('table.active')}
+        />
+      </Flex>
+    </Box>
   );
 }
 
@@ -254,6 +418,8 @@ export default function AdminCategoriesPage() {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
+
   return (
     <Stack spacing={6}>
       {/* Header */}
@@ -287,51 +453,99 @@ export default function AdminCategoriesPage() {
         </Button>
       </Flex>
 
-      {/* Drag hint */}
-      <Text fontSize="12px" color="text.muted">
-        {t('catForm.reorderHint')}
-      </Text>
+      {/* Drag hint — only meaningful when there's more than one row */}
+      {!cats.isLoading && items.length > 1 && (
+        <Text fontSize="12px" color="text.muted">
+          {t('catForm.reorderHint')}
+        </Text>
+      )}
 
-      {/* Sortable table */}
-      <Box
-        bg="bg.surface"
-        border="1px solid"
-        borderColor="border.subtle"
-        borderRadius="lg"
-        overflow="hidden"
-      >
-        <Box overflowX="auto">
-          <Table size="sm" variant="simple">
-            <Thead bg="bg.canvas">
-              <Tr>
-                <Th w="40px" />
-                <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.name')}</Th>
-                <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.nameAr')}</Th>
-                <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.slug')}</Th>
-                <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.active')}</Th>
-                <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.actions')}</Th>
-              </Tr>
-            </Thead>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-                <Tbody>
-                  {items.map((cat) => (
-                    <SortableRow
-                      key={cat.id}
-                      cat={cat}
-                      onEdit={handleOpenEdit}
-                      onDelete={(c) => { setDeleteTarget(c); openConfirm(); }}
-                      onToggleActive={(c, val) =>
-                        updateMutation.mutate({ id: c.id as number, payload: { order: c.order, is_active: val } })
-                      }
-                    />
-                  ))}
-                </Tbody>
-              </SortableContext>
-            </DndContext>
-          </Table>
+      {cats.isLoading ? (
+        // Loading skeletons
+        <Stack spacing={3}>
+          {[0, 1, 2, 3].map((i) => (
+            <Box key={i} bg="bg.surface" border="1px solid" borderColor="border.subtle" borderRadius="lg" p={4}>
+              <Flex align="center" gap={3}>
+                <Skeleton w="32px" h="32px" borderRadius="8px" startColor="warm.cream" endColor="border.subtle" />
+                <Box flex={1}>
+                  <Skeleton h="13px" w="50%" mb={2} startColor="warm.cream" endColor="border.subtle" />
+                  <Skeleton h="11px" w="30%" startColor="warm.cream" endColor="border.subtle" />
+                </Box>
+                <Skeleton h="22px" w="64px" borderRadius="full" startColor="warm.cream" endColor="border.subtle" />
+              </Flex>
+            </Box>
+          ))}
+        </Stack>
+      ) : items.length === 0 ? (
+        // Empty state
+        <Box bg="bg.surface" border="1px solid" borderColor="border.subtle" borderRadius="lg" py={14} px={6}>
+          <Stack spacing={3} align="center">
+            <Box color="text.muted" opacity={0.35}><Tag size={38} /></Box>
+            <Text fontSize="14px" color="text.muted">{t('noCategories')}</Text>
+            <Button variant="goldOutline" size="sm" onClick={openAdd}>
+              {t('addFirstCategory')}
+            </Button>
+          </Stack>
         </Box>
-      </Box>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+            {isMobile ? (
+              // ── Mobile: sortable cards ──
+              <Stack spacing={3}>
+                {items.map((cat) => (
+                  <SortableCard
+                    key={cat.id}
+                    cat={cat}
+                    onEdit={handleOpenEdit}
+                    onDelete={(c) => { setDeleteTarget(c); openConfirm(); }}
+                    onToggleActive={(c, val) =>
+                      updateMutation.mutate({ id: c.id as number, payload: { order: c.order, is_active: val } })
+                    }
+                  />
+                ))}
+              </Stack>
+            ) : (
+              // ── Desktop: sortable table ──
+              <Box
+                bg="bg.surface"
+                border="1px solid"
+                borderColor="border.subtle"
+                borderRadius="lg"
+                overflow="hidden"
+              >
+                <Box overflowX="auto">
+                  <Table size="sm" variant="simple">
+                    <Thead bg="bg.canvas">
+                      <Tr>
+                        <Th w="48px" />
+                        <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.name')}</Th>
+                        <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.nameAr')}</Th>
+                        <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.slug')}</Th>
+                        <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.active')}</Th>
+                        <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.actions')}</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {items.map((cat) => (
+                        <SortableRow
+                          key={cat.id}
+                          cat={cat}
+                          onEdit={handleOpenEdit}
+                          onDelete={(c) => { setDeleteTarget(c); openConfirm(); }}
+                          onToggleActive={(c, val) =>
+                            updateMutation.mutate({ id: c.id as number, payload: { order: c.order, is_active: val } })
+                          }
+                        />
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              </Box>
+            )}
+          </SortableContext>
+        </DndContext>
+      )}
 
       {/* ── Add Category Modal ───────────────────────────────────────────────── */}
       <Modal isOpen={addOpen} onClose={closeAdd} size="lg" motionPreset="slideInBottom">

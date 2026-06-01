@@ -43,6 +43,15 @@ function WhatsAppGlyph() {
   );
 }
 
+function ZoomGlyph() {
+  return (
+    <Box as="svg" viewBox="0 0 24 24" w="16px" h="16px" aria-hidden>
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      <path d="M20 20l-3.5-3.5M11 8v6M8 11h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </Box>
+  );
+}
+
 export default function ProductPage() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
@@ -119,11 +128,29 @@ export default function ProductPage() {
 
   if (isError || !product) {
     return (
-      <Container maxW="1400px" py={{ base: 16, md: 24 }} textAlign="center">
-        <Heading fontSize="32px" mb={4}>{t('common.error')}</Heading>
-        <Button onClick={() => navigate(0)} variant="goldOutline">
-          {t('common.retry')}
-        </Button>
+      <Container maxW="560px" py={{ base: '72px', md: '120px' }} px={{ base: 6, md: 10 }}>
+        <Stack spacing={6} align="center" textAlign="center">
+          <Box h="1px" w="56px" bg="accent.gold" opacity={0.6} />
+          <Heading
+            as="h1"
+            fontFamily="heading"
+            fontWeight={500}
+            fontSize={{ base: '28px', md: '36px' }}
+          >
+            {t('common.error')}
+          </Heading>
+          <Text fontSize={{ base: '15px', md: '16px' }} color="text.muted" lineHeight={1.7} maxW="380px">
+            {t('common.errorBody')}
+          </Text>
+          <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} pt={2} w={{ base: '100%', sm: 'auto' }}>
+            <Button onClick={() => navigate(0)} variant="blackGold" size="lg">
+              {t('common.retry')}
+            </Button>
+            <Button as={RouterLink} to="/menu" variant="goldOutline" size="lg">
+              {t('notFound.browseMenu')}
+            </Button>
+          </Stack>
+        </Stack>
       </Container>
     );
   }
@@ -204,9 +231,15 @@ export default function ProductPage() {
               cursor="zoom-in"
               role="button"
               aria-label={productName}
+              title={t('product.zoomHint')}
               sx={{
                 '& img': { transition: 'transform 200ms ease-out' },
                 '&:hover img': { transform: 'scale(1.02)' },
+                '& .dy-zoom-badge': {
+                  opacity: { base: 0.85, md: 0 },
+                  transition: 'opacity 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                },
+                '&:hover .dy-zoom-badge': { opacity: 1 },
               }}
             >
               {/* Padding-trick 1:1 aspect ratio — avoids Chakra AspectRatio single-child
@@ -239,6 +272,31 @@ export default function ProductPage() {
                   <Box position="absolute" inset={0} bg="border.subtle" opacity={0.45} />
                 )}
               </Box>
+
+              {/* Subtle zoom affordance — fades in on hover (always visible on touch) */}
+              {activeImage && (
+                <Box
+                  className="dy-zoom-badge"
+                  position="absolute"
+                  bottom={{ base: 3, md: 4 }}
+                  insetInlineEnd={{ base: 3, md: 4 }}
+                  zIndex={2}
+                  w="36px"
+                  h="36px"
+                  borderRadius="full"
+                  bg="rgba(250,248,243,0.9)"
+                  border="1px solid"
+                  borderColor="border.gold"
+                  color="accent.goldDeep"
+                  display="grid"
+                  placeItems="center"
+                  pointerEvents="none"
+                  sx={{ backdropFilter: 'blur(4px)' }}
+                  aria-hidden
+                >
+                  <ZoomGlyph />
+                </Box>
+              )}
             </Box>
           </GridItem>
 
@@ -418,11 +476,11 @@ export default function ProductPage() {
               </TransformWrapper>
             </Box>
 
-            {/* Close button — always top-right */}
+            {/* Close button — pinned to the trailing-top corner (RTL-aware) */}
             <Box
               position="fixed"
               top="20px"
-              right="20px"
+              insetInlineEnd="20px"
               as="button"
               onClick={(e: React.MouseEvent) => { e.stopPropagation(); closeZoom(); }}
               zIndex={2001}
@@ -437,7 +495,7 @@ export default function ProductPage() {
               color="white"
               transition="all 200ms ease-out"
               _hover={{ bg: 'rgba(26,26,26,0.9)' }}
-              aria-label="Close"
+              aria-label={t('product.zoomClose')}
               sx={{ backdropFilter: 'blur(4px)' }}
             >
               <X size={18} />

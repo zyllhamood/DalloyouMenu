@@ -227,7 +227,7 @@ export function DesktopHero({ slides, carousel }: DesktopHeroProps) {
                                     e.stopPropagation();
                                     goTo(i);
                                   }}
-                                  aria-label={`Go to slide ${i + 1}`}
+                                  aria-label={t('a11y.goToSlide', { n: i + 1 })}
                                   w="24px"
                                   h="3px"
                                   borderRadius="full"

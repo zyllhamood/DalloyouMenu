@@ -77,6 +77,8 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
@@ -107,12 +109,7 @@ export function Navbar() {
 
           <HStack spacing={10} display={{ base: 'none', md: 'flex' }}>
             {NAV_LINKS.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                label={t(l.key)}
-                active={l.to === '/' ? pathname === '/' : pathname.startsWith(l.to)}
-              />
+              <NavLink key={l.to} to={l.to} label={t(l.key)} active={isActive(l.to)} />
             ))}
           </HStack>
 
@@ -135,7 +132,7 @@ export function Navbar() {
       </Container>
 
       <Box
-        display={{ base: mobileMenuOpen ? 'block' : 'none', md: 'none' }}
+        display={{ base: 'block', md: 'none' }}
         position="absolute"
         top="100%"
         insetInline={0}
@@ -144,34 +141,36 @@ export function Navbar() {
         borderBottom="1px solid"
         borderColor="border.gold"
         boxShadow="soft"
+        aria-hidden={!mobileMenuOpen}
+        opacity={mobileMenuOpen ? 1 : 0}
+        visibility={mobileMenuOpen ? 'visible' : 'hidden'}
+        transform={mobileMenuOpen ? 'translateY(0)' : 'translateY(-10px)'}
+        pointerEvents={mobileMenuOpen ? 'auto' : 'none'}
+        transformOrigin="top"
+        transition="opacity 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 300ms"
       >
         <Container maxW="1280px" px={{ base: 6, md: 10 }} py={6}>
           <VStack as="nav" spacing={0} align="stretch">
-            {NAV_LINKS.map((l) => (
-              <ChakraLink
-                key={l.to}
-                as={RouterLink}
-                to={l.to}
-                py={4}
-                borderBottom="1px solid"
-                borderColor="border.subtle"
-                fontSize="18px"
-                fontWeight={l.to === '/' ? (pathname === '/' ? 600 : 500) : pathname.startsWith(l.to) ? 600 : 500}
-                color={
-                  l.to === '/'
-                    ? pathname === '/'
-                      ? 'accent.goldDeep'
-                      : 'text.primary'
-                    : pathname.startsWith(l.to)
-                      ? 'accent.goldDeep'
-                      : 'text.primary'
-                }
-                _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t(l.key)}
-              </ChakraLink>
-            ))}
+            {NAV_LINKS.map((l) => {
+              const active = isActive(l.to);
+              return (
+                <ChakraLink
+                  key={l.to}
+                  as={RouterLink}
+                  to={l.to}
+                  py={4}
+                  borderBottom="1px solid"
+                  borderColor="border.subtle"
+                  fontSize="18px"
+                  fontWeight={active ? 600 : 500}
+                  color={active ? 'accent.goldDeep' : 'text.primary'}
+                  _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {t(l.key)}
+                </ChakraLink>
+              );
+            })}
           </VStack>
           <HStack justify="space-between" pt={5}>
             <LanguageToggle />
