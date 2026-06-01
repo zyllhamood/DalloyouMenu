@@ -35,7 +35,7 @@ export function formatPrice(
 }
 
 /**
- * "From SAR XX" / "ابتداءً من XX ر.س" — also safe on undefined.
+ * Price-only legacy helper kept for existing call sites.
  */
 export function formatStartingFrom(
   value: number | string | null | undefined,
@@ -44,8 +44,7 @@ export function formatStartingFrom(
   if (value === null || value === undefined || value === '') return '—';
   const n = typeof value === 'string' ? Number(value) : value;
   if (!Number.isFinite(n)) return '—';
-  if (isArabic(lang)) return `ابتداءً من ${formatPrice(n, lang)}`;
-  return `From ${formatPrice(n, lang)}`;
+  return formatPrice(n, lang);
 }
 
 // ─── Misc utils ────────────────────────────────────────────────────────────

@@ -42,13 +42,18 @@ export function Logo({ size = 'md', to = '/' }: LogoProps) {
       {!iconFailed ? (
         <Box
           as="img"
-          src="/icon.svg"
+          src="/icon.png"
           alt=""
           aria-hidden
           onError={() => setIconFailed(true)}
           h={iconH}
           w="auto"
-          sx={{ display: 'block', objectFit: 'contain', flexShrink: 0 }}
+          sx={{
+            display: 'block',
+            objectFit: 'contain',
+            flexShrink: 0,
+            imageRendering: 'auto',
+          }}
         />
       ) : (
         /* Fallback: letter D in a gold circle if icon.svg fails to load */
@@ -83,8 +88,8 @@ export function Logo({ size = 'md', to = '/' }: LogoProps) {
         fontFamily={lang === 'ar' ? `'El Messiri', serif` : `'Cormorant Garamond', serif`}
         fontSize={wordSize}
         fontWeight={500}
-        letterSpacing="0.32em"
-        textTransform="uppercase"
+        letterSpacing={lang === 'ar' ? '0' : '0.32em'}
+        textTransform={lang === 'ar' ? 'none' : 'uppercase'}
         color="text.primary"
         lineHeight={1}
         transition="color 400ms"

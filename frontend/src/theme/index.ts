@@ -70,6 +70,9 @@ const overrides: ThemeOverride = {
       'html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3, html[dir="rtl"] h4, html[dir="rtl"] h5, html[dir="rtl"] h6': {
         fontFamily: ARABIC_HEADING,
       },
+      'html[dir="rtl"] *': {
+        letterSpacing: '0 !important',
+      },
       '::selection': {
         background: 'rgba(201, 169, 97, 0.3)',
       },

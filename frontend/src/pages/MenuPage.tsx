@@ -4,12 +4,6 @@ import {
   Box,
   Button,
   Container,
-  Drawer,
-  DrawerBody,
-  DrawerCloseButton,
-  DrawerContent,
-  DrawerHeader,
-  DrawerOverlay,
   Flex,
   Heading,
   HStack,
@@ -18,9 +12,8 @@ import {
   InputLeftElement,
   Stack,
   Text,
-  useDisclosure,
 } from '@chakra-ui/react';
-import { LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
+import { LayoutGrid, List } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -69,7 +62,6 @@ export default function MenuPage() {
   const navigate = useNavigate();
   const { categorySlug: pathCategory } = useParams<{ categorySlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const filterDrawer = useDisclosure();
 
   const queryCategory = searchParams.get('category') ?? undefined;
   const activeCategory = pathCategory ?? queryCategory;
@@ -133,7 +125,6 @@ export default function MenuPage() {
     } else {
       navigate(`/menu${suffix}`);
     }
-    filterDrawer.onClose();
   };
 
   const toggleSize = (size: Size) => {
@@ -156,7 +147,6 @@ export default function MenuPage() {
   const clearFilters = () => {
     setSearch('');
     setSizes(new Set());
-    filterDrawer.onClose();
     navigate('/menu');
   };
 
@@ -188,9 +178,9 @@ export default function MenuPage() {
         </Box>
       </Container>
 
-      {/* ── Sticky filter bar ── */}
+      {/* ── Filter bar ── */}
       <Box
-        position="sticky"
+        position={{ base: 'static', md: 'sticky' }}
         top={{ base: '72px', md: '88px' }}
         zIndex={20}
         bg="rgba(250,248,243,0.94)"
@@ -200,97 +190,52 @@ export default function MenuPage() {
         overflowX="hidden"
       >
         <Container maxW="1280px" px={{ base: 6, md: 10 }} py={4}>
-          <Stack spacing={3}>
-            <Flex display={{ base: 'flex', md: 'none' }} gap={3} align="center" minW={0}>
-              <Button
-                leftIcon={<SlidersHorizontal size={16} />}
-                onClick={filterDrawer.onOpen}
-                variant="goldOutline"
-                h="40px"
-                flexShrink={0}
-                px={3}
-              >
-                {t('filters.open')}
-              </Button>
+          <Flex
+            direction={{ base: 'column', lg: 'row' }}
+            align={{ base: 'stretch', lg: 'center' }}
+            gap={{ base: 3, lg: 4 }}
+            minW={0}
+          >
+            <Box flex={{ base: 'none', lg: '1 1 0' }} minW={0}>
+              <FilterRow>
+                <FilterPill
+                  label={t('product.allCategories')}
+                  active={!activeCategory}
+                  onClick={() => selectCategory(undefined)}
+                />
+                {(categories.data ?? []).map((c) => (
+                  <FilterPill
+                    key={c.id}
+                    label={localized(c.name_en, c.name_ar, lang)}
+                    active={activeCategory === c.slug}
+                    onClick={() => selectCategory(c.slug)}
+                  />
+                ))}
+              </FilterRow>
+            </Box>
+
+            <Box flex={{ base: 'none', lg: '0 0 auto' }} minW={0}>
+              <FilterRow label={t('filters.sizes')}>
+                {SIZE_FILTERS.map((size) => (
+                  <FilterPill
+                    key={size}
+                    label={t(SIZE_LABEL_KEYS[size])}
+                    active={sizes.has(size)}
+                    onClick={() => toggleSize(size)}
+                  />
+                ))}
+              </FilterRow>
+            </Box>
+
+            <Flex
+              align="center"
+              justify={{ base: 'space-between', lg: 'flex-end' }}
+              gap={3}
+              minW={0}
+              flex={{ base: 'none', lg: '0 0 auto' }}
+            >
               <SearchInput search={search} setSearch={setSearch} placeholder={t('product.searchPlaceholder')} />
-            </Flex>
-
-            <Stack spacing={3} display={{ base: 'none', md: 'flex' }}>
-              <FilterRow>
-                <FilterPill
-                  label={t('product.allCategories')}
-                  active={!activeCategory}
-                  onClick={() => selectCategory(undefined)}
-                />
-                {(categories.data ?? []).map((c) => (
-                  <FilterPill
-                    key={c.id}
-                    label={localized(c.name_en, c.name_ar, lang)}
-                    active={activeCategory === c.slug}
-                    onClick={() => selectCategory(c.slug)}
-                  />
-                ))}
-              </FilterRow>
-
-              <FilterRow label={t('filters.sizes')}>
-                {SIZE_FILTERS.map((size) => (
-                  <FilterPill
-                    key={size}
-                    label={t(SIZE_LABEL_KEYS[size])}
-                    active={sizes.has(size)}
-                    onClick={() => toggleSize(size)}
-                  />
-                ))}
-              </FilterRow>
-
-              <Flex align="center" justify="space-between" gap={4}>
-                <SearchInput search={search} setSearch={setSearch} placeholder={t('product.searchPlaceholder')} />
-                {hasFilters && (
-                  <Button size="sm" variant="ghostGold" onClick={clearFilters}>
-                    {t('filters.clear')}
-                  </Button>
-                )}
-              </Flex>
-            </Stack>
-          </Stack>
-        </Container>
-      </Box>
-
-      <Drawer isOpen={filterDrawer.isOpen} placement="bottom" onClose={filterDrawer.onClose}>
-        <DrawerOverlay />
-        <DrawerContent bg="bg.surface" borderTopRadius="lg" maxW="100vw" overflowX="hidden">
-          <DrawerCloseButton />
-          <DrawerHeader fontFamily="heading" fontWeight={500}>{t('filters.open')}</DrawerHeader>
-          <DrawerBody pb={8} overflowX="hidden">
-            <Stack spacing={6}>
-              <FilterRow>
-                <FilterPill
-                  label={t('product.allCategories')}
-                  active={!activeCategory}
-                  onClick={() => selectCategory(undefined)}
-                />
-                {(categories.data ?? []).map((c) => (
-                  <FilterPill
-                    key={c.id}
-                    label={localized(c.name_en, c.name_ar, lang)}
-                    active={activeCategory === c.slug}
-                    onClick={() => selectCategory(c.slug)}
-                  />
-                ))}
-              </FilterRow>
-
-              <FilterRow label={t('filters.sizes')}>
-                {SIZE_FILTERS.map((size) => (
-                  <FilterPill
-                    key={size}
-                    label={t(SIZE_LABEL_KEYS[size])}
-                    active={sizes.has(size)}
-                    onClick={() => toggleSize(size)}
-                  />
-                ))}
-              </FilterRow>
-
-              <HStack spacing={1}>
+              <HStack spacing={1} display={{ base: 'flex', md: 'none' }} flexShrink={0}>
                 <ViewToggleButton
                   icon={<LayoutGrid size={16} />}
                   active={viewMode === 'grid'}
@@ -304,16 +249,21 @@ export default function MenuPage() {
                   onClick={() => handleViewMode('list')}
                 />
               </HStack>
-
               {hasFilters && (
-                <Button variant="ghostGold" onClick={clearFilters}>
+                <Button size="sm" variant="ghostGold" onClick={clearFilters} display={{ base: 'none', md: 'inline-flex' }}>
                   {t('filters.clear')}
                 </Button>
               )}
-            </Stack>
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
+            </Flex>
+
+            {hasFilters && (
+              <Button size="sm" variant="ghostGold" onClick={clearFilters} display={{ base: 'inline-flex', md: 'none' }} alignSelf="flex-start">
+                {t('filters.clear')}
+              </Button>
+            )}
+          </Flex>
+        </Container>
+      </Box>
 
       {/* ── Product grid (toggle managed above) ── */}
       <Container maxW="1280px" px={{ base: 5, md: 10 }} py={{ base: 10, md: 16 }} overflowX="hidden">
@@ -361,7 +311,14 @@ function SearchInput({
 
 function FilterRow({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <Stack spacing={2} w="100%" maxW="100%" minW={0}>
+    <Stack
+      direction={{ base: 'column', lg: label ? 'row' : 'column' }}
+      spacing={{ base: 2, lg: label ? 3 : 2 }}
+      align={{ base: 'stretch', lg: label ? 'center' : 'stretch' }}
+      w="100%"
+      maxW="100%"
+      minW={0}
+    >
       {label && (
         <Text
           fontSize="10px"
@@ -369,6 +326,7 @@ function FilterRow({ label, children }: { label?: string; children: ReactNode })
           textTransform="uppercase"
           color="accent.goldDeep"
           fontWeight={600}
+          flexShrink={0}
         >
           {label}
         </Text>
@@ -396,6 +354,9 @@ interface FilterPillProps {
 }
 
 function FilterPill({ label, active, onClick }: FilterPillProps) {
+  const { i18n } = useTranslation();
+  const ar = i18n.language?.startsWith('ar');
+
   return (
     <Button
       onClick={onClick}
@@ -404,9 +365,9 @@ function FilterPill({ label, active, onClick }: FilterPillProps) {
       px={5}
       borderRadius="full"
       flexShrink={0}
-      fontSize="12px"
-      letterSpacing="0.16em"
-      textTransform="uppercase"
+      fontSize={ar ? '13px' : '12px'}
+      letterSpacing={ar ? '0' : '0.16em'}
+      textTransform={ar ? 'none' : 'uppercase'}
       bg={active ? 'warm.black' : 'transparent'}
       color={active ? 'accent.gold' : 'text.primary'}
       border="1px solid"

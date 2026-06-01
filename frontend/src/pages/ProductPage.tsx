@@ -271,15 +271,15 @@ export default function ProductPage() {
                 {description}
               </Text>
 
-              {/* Price — body font, matches ProductCard "From SAR XX" style */}
+              {/* Price — body font, matches ProductCard treatment */}
               <Box>
-                <Text fontSize={{ base: '16px', md: '18px' }} letterSpacing="0.01em">
-                  <Text as="span" color="text.muted" fontWeight={400}>
-                    {t('product.from')}&nbsp;
-                  </Text>
-                  <Text as="span" color="text.primary" fontWeight={500}>
-                    {formatPrice(price, lang)}
-                  </Text>
+                <Text
+                  fontSize={{ base: '16px', md: '18px' }}
+                  letterSpacing="0.01em"
+                  color="text.primary"
+                  fontWeight={500}
+                >
+                  {formatPrice(price, lang)}
                 </Text>
               </Box>
 

@@ -1,7 +1,9 @@
 {
   "nav": {
     "home": "الرئيسية",
-    "menu": "القائمة"
+    "menu": "القائمة",
+    "openMenu": "فتح القائمة",
+    "closeMenu": "إغلاق القائمة"
   },
   "hero": {
     "tagline": "صُنعت بعناية، تُقدَّم برقي.",
@@ -19,15 +21,13 @@
   "product": {
     "orderNow": "اطلب الآن",
     "orderViaWhatsapp": "اطلب عبر واتساب",
-    "startingFrom": "يبدأ من",
     "unavailable": "غير متوفر حالياً",
     "whatsappNotice": "سيتم تحويلك إلى واتساب لإتمام طلبك.",
     "comingSoon": "سيتم إضافة الطلب والدفع من الموقع قريباً.",
     "selectSize": "اختر الحجم",
     "searchPlaceholder": "ابحث في القائمة",
     "allCategories": "الكل",
-    "empty": "لا توجد عناصر.",
-    "from": "ابتداءً من"
+    "empty": "لا توجد عناصر."
   },
   "sizes": {
     "small": "صغير",

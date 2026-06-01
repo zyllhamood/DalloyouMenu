@@ -4,7 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import type { Product } from '../lib/api';
-import { formatStartingFrom, localized } from '../lib/format';
+import { formatPrice, localized } from '../lib/format';
 import { getPrimaryVariantImage } from '../lib/productImages';
 
 interface ProductCardProps {
@@ -14,13 +14,42 @@ interface ProductCardProps {
   listMode?: boolean;
 }
 
+function normalisePrice(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = typeof value === 'string' ? Number(value) : value;
+  return Number.isFinite(n) ? n : null;
+}
+
+function compactPrice(value: number): string {
+  const rounded = Number.isInteger(value) ? value : Number(value.toFixed(2));
+  return String(rounded);
+}
+
+function formatCardPrice(product: Product, lang: string): string {
+  const variantPrices = (product.variants ?? [])
+    .map((v) => normalisePrice(v.price))
+    .filter((price): price is number => price !== null);
+  const startingPrice = normalisePrice(product.starting_price);
+  const basePrice = normalisePrice(product.base_price);
+  const minPrice = variantPrices.length ? Math.min(...variantPrices) : startingPrice ?? basePrice;
+  const maxPrice = variantPrices.length ? Math.max(...variantPrices) : basePrice ?? startingPrice;
+
+  if (minPrice === null || minPrice === undefined) return '—';
+  if (maxPrice !== null && maxPrice !== undefined && maxPrice > minPrice) {
+    const min = compactPrice(minPrice);
+    const max = compactPrice(maxPrice);
+    return lang.startsWith('ar') ? `${min} - ${max} ر.س` : `SAR ${min} - ${max}`;
+  }
+  return formatPrice(minPrice, lang);
+}
+
 export function ProductCard({ product, eager = false }: ProductCardProps) {
   const { i18n, t } = useTranslation();
   const lang = i18n.language;
 
   const name = localized(product.name_en, product.name_ar, lang);
   const catName = localized(product.category.name_en, product.category.name_ar, lang);
-  const price = product.starting_price ?? product.base_price;
+  const price = formatCardPrice(product, lang);
   const unavailable = !product.is_available;
   const primaryImage = useMemo(() => getPrimaryVariantImage(product), [product]);
 
@@ -127,7 +156,7 @@ export function ProductCard({ product, eager = false }: ProductCardProps) {
           {name}
         </LinkOverlay>
         <Text fontSize="13px" color="text.muted" letterSpacing="0.04em">
-          {formatStartingFrom(price, lang)}
+          {price}
         </Text>
       </Box>
     </LinkBox>

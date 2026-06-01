@@ -1,7 +1,9 @@
 {
   "nav": {
     "home": "Home",
-    "menu": "Menu"
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "hero": {
     "tagline": "Crafted with care. Served with grace.",
@@ -19,15 +21,13 @@
   "product": {
     "orderNow": "Order Now",
     "orderViaWhatsapp": "Order via WhatsApp",
-    "startingFrom": "Starting from",
     "unavailable": "Currently Unavailable",
     "whatsappNotice": "You'll be redirected to WhatsApp to complete your order.",
     "comingSoon": "Online ordering and payment coming soon.",
     "selectSize": "Choose a size",
     "searchPlaceholder": "Search the menu",
     "allCategories": "All",
-    "empty": "No items found.",
-    "from": "From"
+    "empty": "No items found."
   },
   "sizes": {
     "small": "Small",

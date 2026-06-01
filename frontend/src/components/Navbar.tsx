@@ -6,12 +6,7 @@ import {
   HStack,
   Link as ChakraLink,
   IconButton,
-  Drawer,
-  DrawerOverlay,
-  DrawerContent,
-  DrawerBody,
   VStack,
-  useDisclosure,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -26,14 +21,17 @@ const NAV_LINKS = [
 ] as const;
 
 function NavLink({ to, label, active }: { to: string; label: string; active: boolean }) {
+  const { i18n } = useTranslation();
+  const ar = i18n.language?.startsWith('ar');
+
   return (
     <ChakraLink
       as={RouterLink}
       to={to}
       position="relative"
-      fontSize="13px"
-      letterSpacing="0.18em"
-      textTransform="uppercase"
+      fontSize={ar ? '16px' : '13px'}
+      letterSpacing={ar ? '0' : '0.18em'}
+      textTransform={ar ? 'none' : 'uppercase'}
       color={active ? 'accent.goldDeep' : 'text.primary'}
       fontWeight={active ? 500 : 400}
       _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
@@ -65,11 +63,19 @@ function MenuGlyph() {
   );
 }
 
+function CloseGlyph() {
+  return (
+    <Box as="svg" viewBox="0 0 24 24" w="20px" h="20px" aria-hidden>
+      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </Box>
+  );
+}
+
 export function Navbar() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const [scrolled, setScrolled] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -79,8 +85,8 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    onClose();
-  }, [pathname, onClose]);
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <Box
@@ -88,11 +94,11 @@ export function Navbar() {
       position="sticky"
       top={0}
       zIndex={50}
-      bg={scrolled ? 'rgba(250, 248, 243, 0.92)' : 'transparent'}
-      backdropFilter={scrolled ? 'saturate(180%) blur(12px)' : 'none'}
+      bg={scrolled || mobileMenuOpen ? 'rgba(250, 248, 243, 0.94)' : 'transparent'}
+      backdropFilter={scrolled || mobileMenuOpen ? 'saturate(180%) blur(12px)' : 'none'}
       borderBottom="1px solid"
-      borderColor={scrolled ? 'border.gold' : 'transparent'}
-      boxShadow={scrolled ? 'soft' : 'none'}
+      borderColor={scrolled || mobileMenuOpen ? 'border.gold' : 'transparent'}
+      boxShadow={scrolled || mobileMenuOpen ? 'soft' : 'none'}
       transition="all 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
     >
       <Container maxW="1280px" px={{ base: 6, md: 10 }}>
@@ -119,51 +125,60 @@ export function Navbar() {
             </Box>
             <IconButton
               display={{ base: 'inline-flex', md: 'none' }}
-              aria-label="Open menu"
+              aria-label={mobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
               variant="ghostGold"
-              icon={<MenuGlyph />}
-              onClick={onOpen}
+              icon={mobileMenuOpen ? <CloseGlyph /> : <MenuGlyph />}
+              onClick={() => setMobileMenuOpen((open) => !open)}
             />
           </HStack>
         </Flex>
       </Container>
 
-      <Drawer isOpen={isOpen} onClose={onClose} placement="end" size="full">
-        <DrawerOverlay />
-        <DrawerContent bg="bg.canvas">
-          <DrawerBody>
-            <Flex h="72px" align="center" justify="space-between">
-              <Logo />
-              <IconButton
-                aria-label="Close menu"
-                variant="ghostGold"
-                onClick={onClose}
-                icon={
-                  <Box as="svg" viewBox="0 0 24 24" w="20px" h="20px">
-                    <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </Box>
+      <Box
+        display={{ base: mobileMenuOpen ? 'block' : 'none', md: 'none' }}
+        position="absolute"
+        top="100%"
+        insetInline={0}
+        bg="rgba(250, 248, 243, 0.98)"
+        backdropFilter="saturate(180%) blur(14px)"
+        borderBottom="1px solid"
+        borderColor="border.gold"
+        boxShadow="soft"
+      >
+        <Container maxW="1280px" px={{ base: 6, md: 10 }} py={6}>
+          <VStack as="nav" spacing={0} align="stretch">
+            {NAV_LINKS.map((l) => (
+              <ChakraLink
+                key={l.to}
+                as={RouterLink}
+                to={l.to}
+                py={4}
+                borderBottom="1px solid"
+                borderColor="border.subtle"
+                fontSize="18px"
+                fontWeight={l.to === '/' ? (pathname === '/' ? 600 : 500) : pathname.startsWith(l.to) ? 600 : 500}
+                color={
+                  l.to === '/'
+                    ? pathname === '/'
+                      ? 'accent.goldDeep'
+                      : 'text.primary'
+                    : pathname.startsWith(l.to)
+                      ? 'accent.goldDeep'
+                      : 'text.primary'
                 }
-              />
-            </Flex>
-            <VStack spacing={8} align="stretch" mt={16}>
-              {NAV_LINKS.map((l) => (
-                <NavLink
-                  key={l.to}
-                  to={l.to}
-                  label={t(l.key)}
-                  active={l.to === '/' ? pathname === '/' : pathname.startsWith(l.to)}
-                />
-              ))}
-              <Box pt={8} borderTop="1px solid" borderColor="border.subtle">
-                <HStack justify="space-between">
-                  <LanguageToggle />
-                  <WhatsAppIcon />
-                </HStack>
-              </Box>
-            </VStack>
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
+                _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t(l.key)}
+              </ChakraLink>
+            ))}
+          </VStack>
+          <HStack justify="space-between" pt={5}>
+            <LanguageToggle />
+            <WhatsAppIcon />
+          </HStack>
+        </Container>
+      </Box>
     </Box>
   );
 }
