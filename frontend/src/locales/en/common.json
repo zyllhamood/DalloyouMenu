@@ -31,12 +31,18 @@
     "emptyHint": "Try adjusting your search or filters.",
     "new": "New",
     "zoomClose": "Close",
-    "zoomHint": "Tap to zoom"
+    "zoomHint": "Tap to zoom",
+    "size": "Size"
   },
   "sizes": {
     "small": "Small",
     "medium": "Medium",
-    "large": "Large"
+    "large": "Large",
+    "servings": {
+      "small": "Serves 1-2 people",
+      "medium": "Serves 6-8 people",
+      "large": "Serves 8-10 people"
+    }
   },
   "filters": {
     "sizes": "Sizes",

@@ -22,12 +22,20 @@ class Category(models.Model):
         super().save(*args, **kwargs)
 
 class Product(models.Model):
+    SIZE_CHOICES = (
+        ('SMALL', 'Small'),
+        ('MEDIUM', 'Medium'),
+        ('LARGE', 'Large'),
+    )
+
     name_en = models.CharField(max_length=200)
     name_ar = models.CharField(max_length=200)
     description_en = models.TextField(blank=True)
     description_ar = models.TextField(blank=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
     styled_image = models.ImageField(upload_to='products/styled/')
+    display_image = models.ImageField(upload_to='products/display/', blank=True)
+    size = models.CharField(max_length=20, choices=SIZE_CHOICES, default='LARGE')
     base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_new = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
@@ -40,22 +48,4 @@ class Product(models.Model):
         ordering = ['order', '-created_at']
 
     def __str__(self):
-        return self.name_en
-
-class ProductVariant(models.Model):
-    SIZE_CHOICES = (
-        ('SMALL', 'Small'),
-        ('MEDIUM', 'Medium'),
-        ('LARGE', 'Large'),
-    )
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
-    size = models.CharField(max_length=20, choices=SIZE_CHOICES)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    is_available = models.BooleanField(default=True)
-    image = models.ImageField(upload_to='products/variants/')
-
-    class Meta:
-        unique_together = ('product', 'size')
-
-    def __str__(self):
-        return f"{self.product.name_en} - {self.size}"
+        return f"{self.name_en} - {self.size}"

@@ -23,7 +23,7 @@ import { Package, Plus, Star, Tag } from 'lucide-react';
 import StatCard from '../../components/admin/StatCard';
 import { adminProductsList, categoriesList, productsList } from '../../lib/api';
 import { formatPrice, localized } from '../../lib/format';
-import { getPrimaryVariantImage } from '../../lib/productImages';
+import { getPrimaryProductImage } from '../../lib/productImages';
 import { useAuthStore } from '../../stores/authStore';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
@@ -258,7 +258,7 @@ export default function AdminDashboardPage() {
                     </Tr>
                   )
                 : (recent.data?.results ?? []).map((p) => {
-                    const thumbnail = getPrimaryVariantImage(p);
+                    const thumbnail = getPrimaryProductImage(p);
                     return (
                     <Tr key={p.id} _hover={{ bg: 'bg.canvas' }}>
                       <Td px={4}>

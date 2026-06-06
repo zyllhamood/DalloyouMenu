@@ -2,7 +2,7 @@ import urllib.request
 import io
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
-from api.models import Category, Product, ProductVariant
+from api.models import Category, Product
 
 class Command(BaseCommand):
     help = 'Seed catalog with categories and sample products'
@@ -56,6 +56,7 @@ class Command(BaseCommand):
                 defaults={
                     'name_ar': p_data['name_ar'],
                     'category': cat,
+                    'size': 'LARGE',
                     'base_price': (idx + 1) * 10.00,
                     'is_featured': p_data['featured'],
                     'description_en': f"Delicious {p_data['name_en']}",
@@ -68,10 +69,6 @@ class Command(BaseCommand):
                 product.display_image.save(f"display_{product.id}.png", ContentFile(image_content), save=False)
                 product.styled_image.save(f"styled_{product.id}.png", ContentFile(image_content), save=False)
                 product.save()
-
-                # Add variants
-                ProductVariant.objects.create(product=product, size='SMALL', price=float(product.base_price) * 1.0)
-                ProductVariant.objects.create(product=product, size='MEDIUM', price=float(product.base_price) * 1.5)
                 self.stdout.write(self.style.SUCCESS(f"Created product: {product.name_en}"))
             else:
                 self.stdout.write(f"Product already exists: {product.name_en}")

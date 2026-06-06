@@ -83,7 +83,7 @@ api.interceptors.response.use(
 
 export interface Category {
   id: number;
-  slug: string;
+  slug?: string;
   name_en: string;
   name_ar: string;
   description_en?: string;
@@ -96,24 +96,6 @@ export interface Category {
 export type SizeKey = 'small' | 'medium' | 'large';
 export type VariantSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 
-export interface ProductSize {
-  id: number;
-  size: SizeKey;
-  price: number;       // normalised to Number at the API boundary
-  currency?: string;
-  is_available?: boolean;
-  image: string;
-}
-
-export interface ProductVariant {
-  id: number;
-  product: number;
-  size: VariantSize;
-  price: number;
-  is_available: boolean;
-  image: string;
-}
-
 export interface Product {
   id: number;
   slug: string;
@@ -123,16 +105,19 @@ export interface Product {
   description_en?: string;
   description_ar?: string;
   category: Category;
+  display_image: string | null;
   styled_image: string | null;
   gallery?: string[];
-  variants: ProductVariant[];
-  sizes?: ProductSize[];  // absent on list responses; normalised from `variants` on detail
+  size: VariantSize;
   base_price: number;     // normalised to Number at the API boundary (wire sends string)
   starting_price: number;
   currency?: string;
   is_featured: boolean;
   is_new?: boolean;
   is_available: boolean;
+  order?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Paginated<T> {
@@ -177,10 +162,7 @@ function normaliseListProduct(p: any): Product {
   return {
     ...p,
     base_price: Number(p.base_price),
-    variants: (p.variants ?? []).map((v: any) => ({
-      ...v,
-      price: Number(v.price),
-    })),
+    starting_price: Number(p.starting_price ?? p.base_price),
   };
 }
 
@@ -204,24 +186,10 @@ export const productsList = async (params: ProductListParams = {}): Promise<Pagi
 export const productDetail = async (id: number | string): Promise<Product> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await api.get<any>(`/products/${id}/`);
-  // Normalise the wire format to our internal shape:
-  //  - Django sends `variants` (not `sizes`)
-  //  - size keys are uppercase ("SMALL") — we use lowercase SizeKey
-  //  - prices arrive as decimal strings ("10.00")
-  const sizes: ProductSize[] = (data.variants ?? []).map((v: any) => ({
-    ...v,
-    size: (v.size as string).toLowerCase() as SizeKey,
-    price: Number(v.price),
-  }));
-  const variants: ProductVariant[] = (data.variants ?? []).map((v: any) => ({
-    ...v,
-    price: Number(v.price),
-  }));
   return {
     ...data,
-    variants,
-    sizes,
     base_price: Number(data.base_price),
+    starting_price: Number(data.starting_price ?? data.base_price),
   } as Product;
 };
 
@@ -273,7 +241,7 @@ export const productUpdate = async (
 /** Patch just the toggle fields (featured / available) quickly. */
 export const productPatch = async (
   id: number | string,
-  payload: { is_featured?: boolean; is_available?: boolean },
+  payload: { is_featured?: boolean; is_available?: boolean; order?: number },
 ): Promise<Product> => {
   const { data } = await api.patch<Product>(`/admin/products/${id}/`, payload);
   return data;

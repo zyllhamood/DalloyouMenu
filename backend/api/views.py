@@ -46,10 +46,7 @@ class ProductListView(generics.ListAPIView):
             requested = {s.strip().upper() for s in size_param.split(',')}
             requested &= VALID
             if requested:
-                queryset = queryset.filter(
-                    variants__size__in=requested,
-                    variants__is_available=True,
-                ).distinct()
+                queryset = queryset.filter(size__in=requested)
         return queryset
 
 class ProductDetailView(generics.RetrieveAPIView):

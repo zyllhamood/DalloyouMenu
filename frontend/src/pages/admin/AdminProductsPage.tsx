@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -27,6 +27,21 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
@@ -35,15 +50,62 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 import { adminProductsList, categoriesList, productDelete, productPatch } from '../../lib/api';
 import type { Product } from '../../lib/api';
 import { formatPrice, localized } from '../../lib/format';
-import { getPrimaryVariantImage } from '../../lib/productImages';
+import { getPrimaryProductImage } from '../../lib/productImages';
 
 type TFn = (key: string) => string;
-type TogglePatch = { is_featured?: boolean; is_available?: boolean };
+type TogglePatch = { is_featured?: boolean; is_available?: boolean; order?: number };
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 const PAGE_SIZE = 20;
 
 type StatusFilter = '' | 'available' | 'unavailable' | 'featured' | 'new';
+
+function adminSizeLabel(t: TFn, size: Product['size']) {
+  const key = size === 'SMALL' ? 'Small' : size === 'MEDIUM' ? 'Medium' : 'Large';
+  return t(`form.size${key}`);
+}
+
+function DragGlyph() {
+  return (
+    <Box as="svg" viewBox="0 0 24 24" w="16px" h="16px" aria-hidden>
+      <path
+        d="M9 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6-16a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"
+        fill="currentColor"
+      />
+    </Box>
+  );
+}
+
+function DragHandle({
+  listeners,
+  attributes,
+  label,
+}: {
+  listeners: ReturnType<typeof useSortable>['listeners'];
+  attributes: ReturnType<typeof useSortable>['attributes'];
+  label: string;
+}) {
+  return (
+    <Box
+      {...attributes}
+      {...listeners}
+      aria-label={label}
+      display="grid"
+      placeItems="center"
+      w={{ base: '40px', md: '32px' }}
+      h={{ base: '40px', md: '32px' }}
+      flexShrink={0}
+      borderRadius="8px"
+      color="text.muted"
+      cursor="grab"
+      sx={{ touchAction: 'none', '&:active': { cursor: 'grabbing' } }}
+      _hover={{ bg: 'bg.canvas', color: 'accent.goldDeep' }}
+      transition="all 200ms"
+    >
+      <DragGlyph />
+    </Box>
+  );
+}
 
 // ── Status badge ──────────────────────────────────────────────────────────
 
@@ -115,11 +177,21 @@ function MobileProductCard({
   onToggle: (id: number | string, patch: TogglePatch) => void;
   onDelete: (p: Product) => void;
 }) {
-  const thumbnail = getPrimaryVariantImage(product);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id });
+  const thumbnail = getPrimaryProductImage(product);
   const hasBadges = product.is_featured || product.is_new || !product.is_available;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+    boxShadow: isDragging ? '0 12px 32px rgba(168,138,77,0.2)' : undefined,
+  };
 
   return (
     <Box
+      ref={setNodeRef}
+      style={style}
       bg="bg.surface"
       border="1px solid"
       borderColor="border.subtle"
@@ -128,6 +200,7 @@ function MobileProductCard({
       p={4}
     >
       <Flex gap={3} align="flex-start">
+        <DragHandle attributes={attributes} listeners={listeners} label={t('productsReorderHint')} />
         <Box
           w="68px"
           h="68px"
@@ -169,7 +242,7 @@ function MobileProductCard({
             </Text>
           </Flex>
           <Text fontSize="11px" color="text.muted" mt={1} noOfLines={1}>
-            {localized(product.category.name_en, product.category.name_ar, lang)}
+            {localized(product.category.name_en, product.category.name_ar, lang)} · {adminSizeLabel(t, product.size)}
           </Text>
           {hasBadges && (
             <HStack spacing={1.5} mt={2} flexWrap="wrap">
@@ -234,6 +307,126 @@ function MobileProductCard({
   );
 }
 
+function SortableProductRow({
+  product,
+  lang,
+  t,
+  onToggle,
+  onDelete,
+}: {
+  product: Product;
+  lang: string;
+  t: TFn;
+  onToggle: (id: number | string, patch: TogglePatch) => void;
+  onDelete: (p: Product) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id });
+  const thumbnail = getPrimaryProductImage(product);
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.55 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <Tr ref={setNodeRef} style={style} h="72px" _hover={{ bg: 'bg.canvas' }}>
+      <Td w="44px" px={2}>
+        <DragHandle attributes={attributes} listeners={listeners} label={t('productsReorderHint')} />
+      </Td>
+      <Td px={3}>
+        <Box
+          w="56px"
+          h="56px"
+          borderRadius="8px"
+          overflow="hidden"
+          bg="warm.cream"
+          border="1px solid"
+          borderColor="border.subtle"
+          flexShrink={0}
+        >
+          {thumbnail ? (
+            <Image src={thumbnail} alt="" w="100%" h="100%" objectFit="cover" loading="lazy" />
+          ) : (
+            <Box w="100%" h="100%" bg="border.subtle" />
+          )}
+        </Box>
+      </Td>
+      <Td maxW="200px">
+        <Text fontSize="13px" fontWeight={500} noOfLines={1}>{product.name_en}</Text>
+        <Text fontSize="11px" color="text.muted" fontFamily="'El Messiri', serif" noOfLines={1}>{product.name_ar}</Text>
+        <Text fontSize="10px" color="accent.goldDeep" mt={1}>{adminSizeLabel(t, product.size)}</Text>
+      </Td>
+      <Td display={{ base: 'none', lg: 'table-cell' }}>
+        <Text fontSize="12px" color="text.muted">
+          {localized(product.category.name_en, product.category.name_ar, lang)}
+        </Text>
+      </Td>
+      <Td isNumeric>
+        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(product.base_price, lang)}</Text>
+      </Td>
+      <Td>
+        <Stack spacing={1} align="flex-start">
+          {product.is_featured && <StatusBadge label={t('filterFeatured')} scheme="gold" />}
+          {product.is_new && <StatusBadge label={t('filterNew')} scheme="new" />}
+          {!product.is_available && <StatusBadge label={t('filterUnavailable')} scheme="red" />}
+        </Stack>
+      </Td>
+      <Td>
+        <Tooltip label={t('table.featured')} hasArrow openDelay={500}>
+          <Switch
+            size="sm"
+            isChecked={product.is_featured}
+            colorScheme="yellow"
+            onChange={(e) => onToggle(product.id, { is_featured: e.target.checked })}
+          />
+        </Tooltip>
+      </Td>
+      <Td>
+        <Tooltip label={t('table.available')} hasArrow openDelay={500}>
+          <Switch
+            size="sm"
+            isChecked={product.is_available}
+            colorScheme="green"
+            onChange={(e) => onToggle(product.id, { is_available: e.target.checked })}
+          />
+        </Tooltip>
+      </Td>
+      <Td>
+        <HStack spacing={1}>
+          <Tooltip label={t('edit')} hasArrow openDelay={400}>
+            <IconButton
+              as={RouterLink}
+              to={`/admin/products/${product.id}`}
+              aria-label={t('edit')}
+              icon={<Pencil size={13} />}
+              size="sm"
+              w="32px"
+              h="32px"
+              minW="32px"
+              variant="ghostGold"
+            />
+          </Tooltip>
+          <Tooltip label={t('delete')} hasArrow openDelay={400}>
+            <IconButton
+              aria-label={t('delete')}
+              icon={<Trash2 size={13} />}
+              size="sm"
+              w="32px"
+              h="32px"
+              minW="32px"
+              variant="ghostGold"
+              color="red.500"
+              _hover={{ bg: 'red.50', color: 'red.600' }}
+              onClick={() => onDelete(product)}
+            />
+          </Tooltip>
+        </HStack>
+      </Td>
+    </Tr>
+  );
+}
+
 export default function AdminProductsPage() {
   const { t, i18n } = useTranslation('admin');
   const lang = i18n.language;
@@ -245,7 +438,10 @@ export default function AdminProductsPage() {
   const [status, setStatus] = useState<StatusFilter>('');
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [items, setItems] = useState<Product[]>([]);
   const { isOpen: confirmOpen, onOpen: openConfirm, onClose: closeConfirm } = useDisclosure();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const orderQueue = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   const hasFilters = Boolean(search || category || status);
 
@@ -273,10 +469,50 @@ export default function AdminProductsPage() {
     ...QUERY_OPTS,
   });
 
+  useEffect(() => {
+    setItems(products.data?.results ?? []);
+  }, [products.data]);
+
+  const handleToggle = (id: number | string, patch: TogglePatch) => {
+    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    toggleMutation.mutate({ id, patch });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIdx = items.findIndex((p) => p.id === active.id);
+    const newIdx = items.findIndex((p) => p.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+
+    const reordered = arrayMove(items, oldIdx, newIdx);
+    setItems(reordered);
+
+    const pageOffset = (page - 1) * PAGE_SIZE;
+    reordered.forEach((product, idx) => {
+      const id = product.id as number;
+      const nextOrder = pageOffset + idx;
+      const existing = orderQueue.current.get(id);
+      if (existing) window.clearTimeout(existing);
+      orderQueue.current.set(
+        id,
+        window.setTimeout(() => {
+          void productPatch(id, { order: nextOrder }).then(() => {
+            void queryClient.invalidateQueries({ queryKey: ['admin.productsList'] });
+            void queryClient.invalidateQueries({ queryKey: ['admin.recentProducts'] });
+            void queryClient.invalidateQueries({ queryKey: ['productsList'] });
+          });
+          orderQueue.current.delete(id);
+        }, 250),
+      );
+    });
+  };
+
   // ─── Toggle mutations (optimistic) ─────────────────────────────────────
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, patch }: { id: number | string; patch: { is_featured?: boolean; is_available?: boolean } }) =>
+    mutationFn: ({ id, patch }: { id: number | string; patch: TogglePatch }) =>
       productPatch(id, patch),
     onMutate: async ({ id, patch }) => {
       const key = ['admin.productsList', { search, category, status, page }];
@@ -417,203 +653,111 @@ export default function AdminProductsPage() {
         )}
       </Flex>
 
-      {/* Desktop table (md and up) */}
-      <Box
-        display={{ base: 'none', md: 'block' }}
-        bg="bg.surface"
-        border="1px solid"
-        borderColor="border.subtle"
-        borderRadius="lg"
-        overflow="hidden"
-      >
-        <Box overflowX="auto">
-          <Table size="sm" variant="simple">
-            <Thead bg="bg.canvas">
-              <Tr>
-                <Th w="64px" fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.thumbnail')}</Th>
-                <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.name')}</Th>
-                <Th fontSize="10px" letterSpacing="0.16em" color="text.muted" display={{ base: 'none', lg: 'table-cell' }}>{t('table.category')}</Th>
-                <Th fontSize="10px" letterSpacing="0.16em" color="text.muted" isNumeric>{t('table.price')}</Th>
-                <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.status')}</Th>
-                <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.featured')}</Th>
-                <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.available')}</Th>
-                <Th w="72px" fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.actions')}</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {products.isLoading
-                ? [0, 1, 2, 3, 4, 5].map((i) => (
-                    <Tr key={i} h="72px">
-                      {[0, 1, 2, 3, 4, 5, 6, 7].map((j) => (
-                        <Td key={j}>
-                          <Skeleton h="12px" startColor="warm.cream" endColor="border.subtle" />
-                        </Td>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+          {/* Desktop table (md and up) */}
+          <Box
+            display={{ base: 'none', md: 'block' }}
+            bg="bg.surface"
+            border="1px solid"
+            borderColor="border.subtle"
+            borderRadius="lg"
+            overflow="hidden"
+          >
+            <Box overflowX="auto">
+              <Table size="sm" variant="simple">
+                <Thead bg="bg.canvas">
+                  <Tr>
+                    <Th w="44px" />
+                    <Th w="64px" fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.thumbnail')}</Th>
+                    <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.name')}</Th>
+                    <Th fontSize="10px" letterSpacing="0.16em" color="text.muted" display={{ base: 'none', lg: 'table-cell' }}>{t('table.category')}</Th>
+                    <Th fontSize="10px" letterSpacing="0.16em" color="text.muted" isNumeric>{t('table.price')}</Th>
+                    <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.status')}</Th>
+                    <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.featured')}</Th>
+                    <Th fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.available')}</Th>
+                    <Th w="72px" fontSize="10px" letterSpacing="0.16em" color="text.muted">{t('table.actions')}</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {products.isLoading
+                    ? [0, 1, 2, 3, 4, 5].map((i) => (
+                        <Tr key={i} h="72px">
+                          {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
+                            <Td key={j}>
+                              <Skeleton h="12px" startColor="warm.cream" endColor="border.subtle" />
+                            </Td>
+                          ))}
+                        </Tr>
+                      ))
+                    : items.length === 0
+                    ? (
+                        <Tr>
+                          <Td colSpan={9} textAlign="center" py={4}>
+                            <EmptyContent hasFilters={hasFilters} onClear={clearFilters} t={t} />
+                          </Td>
+                        </Tr>
+                      )
+                    : items.map((p) => (
+                        <SortableProductRow
+                          key={p.id}
+                          product={p}
+                          lang={lang}
+                          t={t}
+                          onToggle={handleToggle}
+                          onDelete={(prod) => { setDeleteTarget(prod); openConfirm(); }}
+                        />
                       ))}
-                    </Tr>
-                  ))
-                : (products.data?.results ?? []).length === 0
-                ? (
-                    <Tr>
-                      <Td colSpan={8} textAlign="center" py={4}>
-                        <EmptyContent hasFilters={hasFilters} onClear={clearFilters} t={t} />
-                      </Td>
-                    </Tr>
-                  )
-                : (products.data?.results ?? []).map((p) => {
-                    const thumbnail = getPrimaryVariantImage(p);
-                    return (
-                    <Tr key={p.id} h="72px" _hover={{ bg: 'bg.canvas' }}>
-                      {/* Thumbnail */}
-                      <Td px={3}>
-                        <Box
-                          w="56px"
-                          h="56px"
-                          borderRadius="8px"
-                          overflow="hidden"
-                          bg="warm.cream"
-                          border="1px solid"
-                          borderColor="border.subtle"
-                          flexShrink={0}
-                        >
-                          {thumbnail ? (
-                            <Image src={thumbnail} alt="" w="100%" h="100%" objectFit="cover" loading="lazy" />
-                          ) : (
-                            <Box w="100%" h="100%" bg="border.subtle" />
-                          )}
-                        </Box>
-                      </Td>
-                      {/* Name */}
-                      <Td maxW="200px">
-                        <Text fontSize="13px" fontWeight={500} noOfLines={1}>{p.name_en}</Text>
-                        <Text fontSize="11px" color="text.muted" fontFamily="'El Messiri', serif" noOfLines={1}>{p.name_ar}</Text>
-                      </Td>
-                      {/* Category */}
-                      <Td display={{ base: 'none', lg: 'table-cell' }}>
-                        <Text fontSize="12px" color="text.muted">
-                          {localized(p.category.name_en, p.category.name_ar, lang)}
-                        </Text>
-                      </Td>
-                      {/* Price */}
-                      <Td isNumeric>
-                        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(p.base_price, lang)}</Text>
-                      </Td>
-                      {/* Status badges */}
-                      <Td>
-                        <Stack spacing={1} align="flex-start">
-                          {p.is_featured && <StatusBadge label={t('filterFeatured')} scheme="gold" />}
-                          {p.is_new && <StatusBadge label={t('filterNew')} scheme="new" />}
-                          {!p.is_available && <StatusBadge label={t('filterUnavailable')} scheme="red" />}
-                        </Stack>
-                      </Td>
-                      {/* Featured toggle */}
-                      <Td>
-                        <Tooltip label={t('table.featured')} hasArrow openDelay={500}>
-                          <Switch
-                            size="sm"
-                            isChecked={p.is_featured}
-                            colorScheme="yellow"
-                            onChange={(e) =>
-                              toggleMutation.mutate({ id: p.id, patch: { is_featured: e.target.checked } })
-                            }
-                          />
-                        </Tooltip>
-                      </Td>
-                      {/* Available toggle */}
-                      <Td>
-                        <Tooltip label={t('table.available')} hasArrow openDelay={500}>
-                          <Switch
-                            size="sm"
-                            isChecked={p.is_available}
-                            colorScheme="green"
-                            onChange={(e) =>
-                              toggleMutation.mutate({ id: p.id, patch: { is_available: e.target.checked } })
-                            }
-                          />
-                        </Tooltip>
-                      </Td>
-                      {/* Actions */}
-                      <Td>
-                        <HStack spacing={1}>
-                          <Tooltip label={t('edit')} hasArrow openDelay={400}>
-                            <IconButton
-                              as={RouterLink}
-                              to={`/admin/products/${p.id}`}
-                              aria-label={t('edit')}
-                              icon={<Pencil size={13} />}
-                              size="sm"
-                              w="32px"
-                              h="32px"
-                              minW="32px"
-                              variant="ghostGold"
-                            />
-                          </Tooltip>
-                          <Tooltip label={t('delete')} hasArrow openDelay={400}>
-                            <IconButton
-                              aria-label={t('delete')}
-                              icon={<Trash2 size={13} />}
-                              size="sm"
-                              w="32px"
-                              h="32px"
-                              minW="32px"
-                              variant="ghostGold"
-                              color="red.500"
-                              _hover={{ bg: 'red.50', color: 'red.600' }}
-                              onClick={() => { setDeleteTarget(p); openConfirm(); }}
-                            />
-                          </Tooltip>
-                        </HStack>
-                      </Td>
-                    </Tr>
-                  );
-                  })}
-            </Tbody>
-          </Table>
-        </Box>
-      </Box>
-
-      {/* Mobile cards (below md) */}
-      <Box display={{ base: 'block', md: 'none' }}>
-        {products.isLoading ? (
-          <Stack spacing={3}>
-            {[0, 1, 2, 3].map((i) => (
-              <Box
-                key={i}
-                bg="bg.surface"
-                border="1px solid"
-                borderColor="border.subtle"
-                borderRadius="lg"
-                p={4}
-              >
-                <Flex gap={3}>
-                  <Skeleton w="68px" h="68px" borderRadius="10px" startColor="warm.cream" endColor="border.subtle" />
-                  <Box flex={1}>
-                    <Skeleton h="14px" w="70%" mb={2} startColor="warm.cream" endColor="border.subtle" />
-                    <Skeleton h="11px" w="40%" mb={3} startColor="warm.cream" endColor="border.subtle" />
-                    <Skeleton h="11px" w="30%" startColor="warm.cream" endColor="border.subtle" />
-                  </Box>
-                </Flex>
-              </Box>
-            ))}
-          </Stack>
-        ) : (products.data?.results ?? []).length === 0 ? (
-          <Box bg="bg.surface" border="1px solid" borderColor="border.subtle" borderRadius="lg">
-            <EmptyContent hasFilters={hasFilters} onClear={clearFilters} t={t} />
+                </Tbody>
+              </Table>
+            </Box>
           </Box>
-        ) : (
-          <Stack spacing={3}>
-            {(products.data?.results ?? []).map((p) => (
-              <MobileProductCard
-                key={p.id}
-                product={p}
-                lang={lang}
-                t={t}
-                onToggle={(id, patch) => toggleMutation.mutate({ id, patch })}
-                onDelete={(prod) => { setDeleteTarget(prod); openConfirm(); }}
-              />
-            ))}
-          </Stack>
-        )}
-      </Box>
+
+          {/* Mobile cards (below md) */}
+          <Box display={{ base: 'block', md: 'none' }}>
+            {products.isLoading ? (
+              <Stack spacing={3}>
+                {[0, 1, 2, 3].map((i) => (
+                  <Box
+                    key={i}
+                    bg="bg.surface"
+                    border="1px solid"
+                    borderColor="border.subtle"
+                    borderRadius="lg"
+                    p={4}
+                  >
+                    <Flex gap={3}>
+                      <Skeleton w="68px" h="68px" borderRadius="10px" startColor="warm.cream" endColor="border.subtle" />
+                      <Box flex={1}>
+                        <Skeleton h="14px" w="70%" mb={2} startColor="warm.cream" endColor="border.subtle" />
+                        <Skeleton h="11px" w="40%" mb={3} startColor="warm.cream" endColor="border.subtle" />
+                        <Skeleton h="11px" w="30%" startColor="warm.cream" endColor="border.subtle" />
+                      </Box>
+                    </Flex>
+                  </Box>
+                ))}
+              </Stack>
+            ) : items.length === 0 ? (
+              <Box bg="bg.surface" border="1px solid" borderColor="border.subtle" borderRadius="lg">
+                <EmptyContent hasFilters={hasFilters} onClear={clearFilters} t={t} />
+              </Box>
+            ) : (
+              <Stack spacing={3}>
+                {items.map((p) => (
+                  <MobileProductCard
+                    key={p.id}
+                    product={p}
+                    lang={lang}
+                    t={t}
+                    onToggle={handleToggle}
+                    onDelete={(prod) => { setDeleteTarget(prod); openConfirm(); }}
+                  />
+                ))}
+              </Stack>
+            )}
+          </Box>
+        </SortableContext>
+      </DndContext>
 
       {/* Pagination (shared across both layouts) */}
       {totalPages > 1 && (

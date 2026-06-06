@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AspectRatio,
@@ -25,12 +25,10 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { X } from 'lucide-react';
 
 import { productDetail } from '../lib/api';
-import type { ProductSize, SizeKey } from '../lib/api';
 import { formatPrice, isArabic, localized } from '../lib/format';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
-// Numeric rank used for sorting — higher = bigger size
-const SIZE_RANK: Record<SizeKey, number> = { small: 1, medium: 2, large: 3 };
+const toSizeKey = (size: string | undefined) => (size ?? 'LARGE').toLowerCase() as 'small' | 'medium' | 'large';
 
 function WhatsAppGlyph() {
   return (
@@ -66,33 +64,6 @@ export default function ProductPage() {
     ...QUERY_OPTS,
   });
 
-  // Pills are displayed small → large (ascending rank)
-  const availableSizes = useMemo<ProductSize[]>(() => {
-    if (!product?.sizes) return [];
-    return product.sizes
-      .filter((s) => s.is_available !== false)
-      .sort((a, b) => SIZE_RANK[a.size] - SIZE_RANK[b.size]);
-  }, [product]);
-
-  // Pre-select the LARGEST available size; fall back to largest overall if all unavailable
-  const defaultSize = useMemo<ProductSize | null>(() => {
-    if (availableSizes.length) return availableSizes[availableSizes.length - 1];
-    if (!product?.sizes?.length) return null;
-    return [...product.sizes].sort((a, b) => SIZE_RANK[b.size] - SIZE_RANK[a.size])[0] ?? null;
-  }, [availableSizes, product]);
-
-  const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null);
-
-  // Sync selection whenever the product changes (e.g. navigating between products)
-  useEffect(() => {
-    setSelectedSizeId(defaultSize?.id ?? null);
-  }, [defaultSize]);
-
-  const selectedSize = useMemo(
-    () => availableSizes.find((s) => s.id === selectedSizeId) ?? defaultSize,
-    [availableSizes, selectedSizeId, defaultSize],
-  );
-
   // ── Zoom modal ─────────────────────────────────────────────────────────────
   const { isOpen: isZoomOpen, onOpen: openZoom, onClose: closeZoom } = useDisclosure();
 
@@ -119,8 +90,8 @@ export default function ProductPage() {
   // ⚠ Must be declared BEFORE the conditional returns so hook call count never
   //   varies between renders (Rules of Hooks). `product` may be undefined here.
   const activeImage = useMemo(
-    () => selectedSize?.image ?? null,
-    [selectedSize],
+    () => product?.display_image ?? null,
+    [product],
   );
 
   // ── Loading / error states ─────────────────────────────────────────────────
@@ -159,14 +130,16 @@ export default function ProductPage() {
   const description =
     localized(product.description_en, product.description_ar, lang) || t('page.productDescFallback');
   const categoryName = localized(product.category.name_en, product.category.name_ar, lang);
-  const price = selectedSize?.price ?? product.base_price;
+  const price = product.base_price;
+  const sizeKey = toSizeKey(product.size);
+  const sizeName = t(`sizes.${sizeKey}`);
+  const servings = t(`sizes.servings.${sizeKey}`);
 
   const openWhatsApp = () => {
     const number = import.meta.env.VITE_WHATSAPP_NUMBER ?? '966532370777';
-    const sizeName = selectedSize ? t(`sizes.${selectedSize.size}`) : null;
     const message = ar
-      ? `السلام عليكم،\nأرغب بطلب: ${productName}${sizeName ? ` (${sizeName})` : ''}\nالسعر: ${price} ر.س`
-      : `Hello,\nI'd like to order: ${productName}${sizeName ? ` (${sizeName})` : ''}\nPrice: SAR ${price}`;
+      ? `السلام عليكم،\nأرغب بطلب: ${productName} (${sizeName})\nالسعر: ${price} ر.س`
+      : `Hello,\nI'd like to order: ${productName} (${sizeName})\nPrice: SAR ${price}`;
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -341,48 +314,40 @@ export default function ProductPage() {
                 </Text>
               </Box>
 
-              {availableSizes.length > 0 && (
-                <Stack spacing={3}>
-                  <Text
-                    fontSize="11px"
-                    letterSpacing="0.24em"
-                    textTransform="uppercase"
-                    color="text.muted"
-                  >
-                    {t('product.selectSize')}
+              <Stack spacing={3}>
+                <Text
+                  fontSize="11px"
+                  letterSpacing="0.24em"
+                  textTransform="uppercase"
+                  color="text.muted"
+                >
+                  {t('product.size')}
+                </Text>
+                <Box
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={3}
+                  alignSelf="flex-start"
+                  px={5}
+                  py={3}
+                  borderRadius="full"
+                  bg="warm.black"
+                  color="accent.gold"
+                  border="1px solid"
+                  borderColor="accent.gold"
+                >
+                  <Text fontSize="13px" fontWeight={600}>
+                    {sizeName}
                   </Text>
-                  <Box display="flex" gap={3} flexWrap="wrap">
-                    {availableSizes.map((s) => {
-                      const active = selectedSize?.id === s.id;
-                      return (
-                        <Button
-                          key={s.id}
-                          onClick={() => setSelectedSizeId(s.id)}
-                          h="44px"
-                          px={6}
-                          borderRadius="full"
-                          fontSize="12px"
-                          letterSpacing="0.16em"
-                          textTransform="uppercase"
-                          bg={active ? 'warm.black' : 'transparent'}
-                          color={active ? 'accent.gold' : 'text.primary'}
-                          border="1px solid"
-                          borderColor={active ? 'warm.black' : 'border.subtle'}
-                          _hover={
-                            active
-                              ? { bg: 'warm.black' }
-                              : { borderColor: 'accent.gold', color: 'accent.goldDeep' }
-                          }
-                          transition="all 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-                          aria-pressed={active}
-                        >
-                          {t(`sizes.${s.size}`)}
-                        </Button>
-                      );
-                    })}
-                  </Box>
-                </Stack>
-              )}
+                  <Text
+                    fontSize="12px"
+                    color="text.onDark"
+                    opacity={0.82}
+                  >
+                    {servings}
+                  </Text>
+                </Box>
+              </Stack>
 
               <Stack spacing={2}>
                 <Button

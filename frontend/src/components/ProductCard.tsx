@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { Product } from '../lib/api';
 import { formatPrice, localized } from '../lib/format';
-import { getPrimaryVariantImage } from '../lib/productImages';
+import { getPrimaryProductImage } from '../lib/productImages';
 
 interface ProductCardProps {
   product: Product;
@@ -20,30 +20,12 @@ function normalisePrice(value: number | string | null | undefined): number | nul
   return Number.isFinite(n) ? n : null;
 }
 
-function compactPrice(value: number): string {
-  const rounded = Number.isInteger(value) ? value : Number(value.toFixed(2));
-  return String(rounded);
-}
-
 function formatCardPrice(product: Product, lang: string): string {
-  const variantPrices = (product.variants ?? [])
-    .map((v) => normalisePrice(v.price))
-    .filter((price): price is number => price !== null);
   const startingPrice = normalisePrice(product.starting_price);
   const basePrice = normalisePrice(product.base_price);
-  const minPrice = variantPrices.length ? Math.min(...variantPrices) : startingPrice ?? basePrice;
-  const maxPrice = variantPrices.length ? Math.max(...variantPrices) : basePrice ?? startingPrice;
-
-  if (minPrice === null || minPrice === undefined) return '—';
-  if (maxPrice !== null && maxPrice !== undefined && maxPrice > minPrice) {
-    const min = compactPrice(minPrice);
-    const max = compactPrice(maxPrice);
-    // Wrap the numeric range in an LTR isolate (LRI…PDI) so the bidi algorithm
-    // keeps "min - max" in order inside the RTL line (otherwise it flips to
-    // read "max - min"). Harmless in LTR.
-    return lang.startsWith('ar') ? `\u2066${min} - ${max}\u2069 ر.س` : `SAR ${min} - ${max}`;
-  }
-  return formatPrice(minPrice, lang);
+  const price = startingPrice ?? basePrice;
+  if (price === null || price === undefined) return '—';
+  return formatPrice(price, lang);
 }
 
 // ── Small gold "New" pill, anchored to the image's leading-top corner ──────────
@@ -80,10 +62,11 @@ export function ProductCard({ product, eager = false }: ProductCardProps) {
 
   const name = localized(product.name_en, product.name_ar, lang);
   const catName = localized(product.category.name_en, product.category.name_ar, lang);
+  const sizeName = t(`sizes.${product.size.toLowerCase()}`);
   const price = formatCardPrice(product, lang);
   const unavailable = !product.is_available;
   const isNew = Boolean(product.is_new) && !unavailable;
-  const primaryImage = useMemo(() => getPrimaryVariantImage(product), [product]);
+  const primaryImage = useMemo(() => getPrimaryProductImage(product), [product]);
 
   const ImageInner = (
     <>
@@ -182,7 +165,7 @@ export function ProductCard({ product, eager = false }: ProductCardProps) {
           color="accent.goldDeep"
           mb={2}
         >
-          {catName}
+          {catName} · {sizeName}
         </Text>
         <LinkOverlay
           as={unavailable ? 'span' : RouterLink}
