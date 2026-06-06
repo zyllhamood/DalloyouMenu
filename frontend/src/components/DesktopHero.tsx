@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { Product } from '../lib/api';
 import type { UseCarouselReturn } from '../hooks/useCarousel';
-import { formatStartingFrom, localized } from '../lib/format';
+import { formatStartingFrom } from '../lib/format';
 
 const FALLBACK = 'https://placehold.co/800x800/FFFFFF/C9A961?text=Dalloyou&font=cormorant';
 const SLIDE_INTERVAL_MS = 4000;
@@ -89,8 +89,8 @@ interface DesktopHeroProps {
 
 export function DesktopHero({ slides, carousel }: DesktopHeroProps) {
   const { currentIndex, goNext, goPrev, goTo, setIsPaused } = carousel;
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
+  const lang = 'ar';
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
 
@@ -98,8 +98,8 @@ export function DesktopHero({ slides, carousel }: DesktopHeroProps) {
 
   const slide = slides[currentIndex];
   const slideImage = slide.styled_image ?? FALLBACK;
-  const slideName = localized(slide.name_en, slide.name_ar, lang);
-  const slideDesc = localized(slide.description_en, slide.description_ar, lang);
+  const slideName = slide.name_ar || slide.name_en;
+  const slideDesc = slide.description_ar || slide.description_en;
   const startingPrice = slide.starting_price ?? slide.base_price;
 
   const handleImageClick = () => navigate(`/product/${slide.id}`);

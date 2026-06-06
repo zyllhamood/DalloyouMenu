@@ -32,20 +32,17 @@
     "new": "جديد",
     "zoomClose": "إغلاق",
     "zoomHint": "اضغط للتكبير",
-    "size": "الحجم"
+    "size": "الحجم",
+    "measurement": "المقاس أو الوزن"
   },
   "sizes": {
     "small": "صغير",
     "medium": "وسط",
-    "large": "كبير",
-    "servings": {
-      "small": "يكفي 1-2 أشخاص",
-      "medium": "يكفي 6-8 أشخاص",
-      "large": "يكفي 8-10 أشخاص"
-    }
+    "large": "كبير"
   },
   "filters": {
     "sizes": "المقاسات",
+    "measurements": "المقاسات والأوزان",
     "open": "الفلاتر",
     "clear": "مسح الفلاتر"
   },

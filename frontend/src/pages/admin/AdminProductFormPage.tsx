@@ -30,41 +30,46 @@ import ImageDropZone from '../../components/admin/ImageDropZone';
 import { TextField, TextareaField, NumberField } from '../../components/admin/AdminFormField';
 import { categoriesList, productDetail, productCreate, productUpdate } from '../../lib/api';
 import type { VariantSize } from '../../lib/api';
+import { SIZE_OPTIONS, sizeToKey } from '../../lib/productMeasurement';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
-const SIZE_OPTIONS: VariantSize[] = ['SMALL', 'MEDIUM', 'LARGE'];
 
 const schema = z.object({
   categoryId: z.number().int().positive(),
-  nameEn: z.string().min(1, 'Required').max(200, 'Max 200 characters'),
   nameAr: z.string().min(1, 'Required').max(200, 'Max 200 characters'),
-  descriptionEn: z.string().max(2000).optional().default(''),
   descriptionAr: z.string().max(2000).optional().default(''),
-  size: z.enum(['SMALL', 'MEDIUM', 'LARGE']),
+  sizeMode: z.enum(['SIZE', 'WEIGHT']),
+  size: z.enum(['SMALL', 'MEDIUM', 'LARGE']).nullable().optional(),
+  weightLabel: z.string().max(80, 'Max 80 characters').optional().default(''),
   basePrice: z.number().nonnegative('Must be >= 0'),
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
   isAvailable: z.boolean().default(true),
   order: z.number().int().nonnegative().default(0),
+}).superRefine((values, ctx) => {
+  if (values.sizeMode === 'SIZE' && !values.size) {
+    ctx.addIssue({ code: 'custom', path: ['size'], message: 'Required' });
+  }
+  if (values.sizeMode === 'WEIGHT' && !values.weightLabel?.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['weightLabel'], message: 'Required' });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
 
 const defaultValues: FormValues = {
   categoryId: 0,
-  nameEn: '',
   nameAr: '',
-  descriptionEn: '',
   descriptionAr: '',
+  sizeMode: 'SIZE',
   size: 'LARGE',
+  weightLabel: '',
   basePrice: 0,
   isFeatured: false,
   isNew: false,
   isAvailable: true,
   order: 0,
 };
-
-const sizeToKey = (size: VariantSize) => size.toLowerCase() as 'small' | 'medium' | 'large';
 
 export default function AdminProductFormPage() {
   const { t } = useTranslation('admin');
@@ -92,6 +97,7 @@ export default function AdminProductFormPage() {
     register,
     handleSubmit,
     control,
+    watch,
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
@@ -104,11 +110,11 @@ export default function AdminProductFormPage() {
     const p = existing.data;
     reset({
       categoryId: p.category.id,
-      nameEn: p.name_en,
       nameAr: p.name_ar,
-      descriptionEn: p.description_en ?? '',
       descriptionAr: p.description_ar ?? '',
+      sizeMode: p.size_mode ?? 'SIZE',
       size: p.size ?? 'LARGE',
+      weightLabel: p.weight_label ?? '',
       basePrice: Number(p.base_price),
       isFeatured: p.is_featured,
       isNew: p.is_new ?? false,
@@ -122,11 +128,13 @@ export default function AdminProductFormPage() {
   const buildFormData = (values: FormValues): FormData => {
     const fd = new FormData();
     fd.append('category_id', String(values.categoryId));
-    fd.append('name_en', values.nameEn);
+    fd.append('name_en', values.nameAr);
     fd.append('name_ar', values.nameAr);
-    fd.append('description_en', values.descriptionEn ?? '');
+    fd.append('description_en', values.descriptionAr ?? '');
     fd.append('description_ar', values.descriptionAr ?? '');
-    fd.append('size', values.size);
+    fd.append('size_mode', values.sizeMode);
+    fd.append('size', values.sizeMode === 'SIZE' ? String(values.size ?? 'LARGE') : '');
+    fd.append('weight_label', values.sizeMode === 'WEIGHT' ? values.weightLabel.trim() : '');
     fd.append('base_price', String(values.basePrice));
     fd.append('is_featured', values.isFeatured ? 'true' : 'false');
     fd.append('is_new', values.isNew ? 'true' : 'false');
@@ -136,6 +144,8 @@ export default function AdminProductFormPage() {
     if (styledImage instanceof File) fd.append('styled_image', styledImage);
     return fd;
   };
+
+  const sizeMode = watch('sizeMode');
 
   const onSubmit = async (values: FormValues) => {
     const errs: typeof imageError = {};
@@ -196,7 +206,7 @@ export default function AdminProductFormPage() {
             {isEdit ? t('form.editEyebrow') : t('form.createEyebrow')}
           </Text>
           <Text fontFamily="heading" fontWeight={500} fontSize={{ base: '24px', md: '28px' }} color="text.primary">
-            {isEdit ? `${t('edit')}: ${existing.data?.name_en ?? ''}` : t('addProduct')}
+            {isEdit ? `${t('edit')}: ${existing.data?.name_ar ?? existing.data?.name_en ?? ''}` : t('addProduct')}
           </Text>
           <Text fontSize="13px" color="text.muted" mt={2} maxW="680px" lineHeight={1.6}>
             {t('form.productFormIntro')}
@@ -223,7 +233,7 @@ export default function AdminProductFormPage() {
                         >
                           <option value="">{t('form.selectCategory')}</option>
                           {(cats.data ?? []).map((c) => (
-                            <option key={c.id} value={c.id}>{c.name_en} / {c.name_ar}</option>
+                            <option key={c.id} value={c.id}>{c.name_ar || c.name_en}</option>
                           ))}
                         </Select>
                       )}
@@ -232,10 +242,8 @@ export default function AdminProductFormPage() {
                     <FormErrorMessage fontSize="11px">{errors.categoryId?.message}</FormErrorMessage>
                   </FormControl>
                 </GridItem>
-                <TextField label={t('form.nameEn')} helper={t('form.nameEnHelper')} isRequired error={errors.nameEn?.message} {...register('nameEn')} />
-                <TextField label={t('form.nameAr')} helper={t('form.nameArHelper')} isRequired error={errors.nameAr?.message} {...register('nameAr')} dir="rtl" />
                 <GridItem colSpan={{ base: 1, md: 2 }}>
-                  <TextareaField label={t('form.descEn')} helper={t('form.descEnHelper')} error={errors.descriptionEn?.message} {...register('descriptionEn')} />
+                  <TextField label={t('form.nameAr')} helper={t('form.nameArHelper')} isRequired error={errors.nameAr?.message} {...register('nameAr')} dir="rtl" />
                 </GridItem>
                 <GridItem colSpan={{ base: 1, md: 2 }}>
                   <TextareaField label={t('form.descAr')} helper={t('form.descArHelper')} error={errors.descriptionAr?.message} {...register('descriptionAr')} dir="rtl" />
@@ -265,11 +273,11 @@ export default function AdminProductFormPage() {
             <SectionCard step="3" title={t('form.sectionPricing')} description={t('form.sectionPricingDesc')}>
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
                 <Controller
-                  name="size"
+                  name="sizeMode"
                   control={control}
                   render={({ field }) => (
-                    <FormControl isInvalid={!!errors.size} isRequired>
-                      <FormLabel fontSize="13px" fontWeight={500}>{t('form.productSize')}</FormLabel>
+                    <FormControl isInvalid={!!errors.sizeMode} isRequired>
+                      <FormLabel fontSize="13px" fontWeight={500}>{t('form.measurementType')}</FormLabel>
                       <Select
                         size="sm"
                         borderRadius="sm"
@@ -277,17 +285,49 @@ export default function AdminProductFormPage() {
                         onChange={(e) => field.onChange(e.target.value)}
                         _focus={{ borderColor: 'accent.gold', boxShadow: '0 0 0 1px rgba(201,169,97,0.4)' }}
                       >
-                        {SIZE_OPTIONS.map((size) => (
-                          <option key={size} value={size}>
-                            {tc(`sizes.${sizeToKey(size)}`)} - {tc(`sizes.servings.${sizeToKey(size)}`)}
-                          </option>
-                        ))}
+                        <option value="SIZE">{t('form.measurementSize')}</option>
+                        <option value="WEIGHT">{t('form.measurementWeight')}</option>
                       </Select>
-                      {!errors.size && <Text fontSize="11px" color="text.muted" mt={1.5}>{t('form.productSizeHelper')}</Text>}
-                      <FormErrorMessage fontSize="11px">{errors.size?.message}</FormErrorMessage>
+                      {!errors.sizeMode && <Text fontSize="11px" color="text.muted" mt={1.5}>{t('form.measurementTypeHelper')}</Text>}
+                      <FormErrorMessage fontSize="11px">{errors.sizeMode?.message}</FormErrorMessage>
                     </FormControl>
                   )}
                 />
+                {sizeMode === 'WEIGHT' ? (
+                  <TextField
+                    label={t('form.weightLabel')}
+                    helper={t('form.weightLabelHelper')}
+                    isRequired
+                    error={errors.weightLabel?.message}
+                    {...register('weightLabel')}
+                    dir="rtl"
+                  />
+                ) : (
+                  <Controller
+                    name="size"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl isInvalid={!!errors.size} isRequired>
+                        <FormLabel fontSize="13px" fontWeight={500}>{t('form.productSize')}</FormLabel>
+                        <Select
+                          size="sm"
+                          borderRadius="sm"
+                          value={field.value ?? 'LARGE'}
+                          onChange={(e) => field.onChange(e.target.value as VariantSize)}
+                          _focus={{ borderColor: 'accent.gold', boxShadow: '0 0 0 1px rgba(201,169,97,0.4)' }}
+                        >
+                          {SIZE_OPTIONS.map((size) => (
+                            <option key={size} value={size}>
+                              {tc(`sizes.${sizeToKey(size)}`)}
+                            </option>
+                          ))}
+                        </Select>
+                        {!errors.size && <Text fontSize="11px" color="text.muted" mt={1.5}>{t('form.productSizeHelper')}</Text>}
+                        <FormErrorMessage fontSize="11px">{errors.size?.message}</FormErrorMessage>
+                      </FormControl>
+                    )}
+                  />
+                )}
                 <Controller
                   name="basePrice"
                   control={control}

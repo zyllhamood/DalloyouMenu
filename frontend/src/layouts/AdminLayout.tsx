@@ -29,7 +29,6 @@ import {
   X,
 } from 'lucide-react';
 
-import LanguageToggle from '../components/LanguageToggle';
 import Logo from '../components/Logo';
 import { useAuthStore } from '../stores/authStore';
 import { useDirection } from '../hooks/useDirection';
@@ -321,7 +320,7 @@ export function AdminLayout() {
             </Text>
           </HStack>
 
-          {/* Right: username + language toggle */}
+          {/* Right: username */}
           <HStack spacing={3} flexShrink={0}>
             <HStack
               spacing={1.5}
@@ -333,7 +332,6 @@ export function AdminLayout() {
               <User size={13} />
               <Text noOfLines={1} maxW="120px">{displayName}</Text>
             </HStack>
-            <LanguageToggle />
           </HStack>
         </HStack>
 

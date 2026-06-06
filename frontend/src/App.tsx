@@ -8,12 +8,10 @@ import i18n from './lib/i18n';
 import theme from './theme';
 import { queryClient } from './lib/queryClient';
 import { useAuthStore } from './stores/authStore';
-import { useUiStore } from './stores/uiStore';
 import AppRoutes from './routes';
 
 function AppShell() {
   const hydrate = useAuthStore((s) => s.hydrate);
-  const language = useUiStore((s) => s.language);
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -21,10 +19,10 @@ function AppShell() {
   }, [hydrate]);
 
   useEffect(() => {
-    void i18n.changeLanguage(language);
-    document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
-    document.documentElement.setAttribute('lang', language);
-  }, [language]);
+    void i18n.changeLanguage('ar');
+    document.documentElement.setAttribute('dir', 'rtl');
+    document.documentElement.setAttribute('lang', 'ar');
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });

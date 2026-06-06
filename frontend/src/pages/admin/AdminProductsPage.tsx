@@ -49,7 +49,7 @@ import { Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import { adminProductsList, categoriesList, productDelete, productPatch } from '../../lib/api';
 import type { Product } from '../../lib/api';
-import { formatPrice, localized } from '../../lib/format';
+import { formatPrice } from '../../lib/format';
 import { getPrimaryProductImage } from '../../lib/productImages';
 
 type TFn = (key: string) => string;
@@ -60,7 +60,9 @@ const PAGE_SIZE = 20;
 
 type StatusFilter = '' | 'available' | 'unavailable' | 'featured' | 'new';
 
-function adminSizeLabel(t: TFn, size: Product['size']) {
+function adminMeasurementLabel(t: TFn, product: Product) {
+  if (product.size_mode === 'WEIGHT') return product.weight_label || '—';
+  const size = product.size ?? 'LARGE';
   const key = size === 'SMALL' ? 'Small' : size === 'MEDIUM' ? 'Medium' : 'Large';
   return t(`form.size${key}`);
 }
@@ -166,13 +168,11 @@ function EmptyContent({
 
 function MobileProductCard({
   product,
-  lang,
   t,
   onToggle,
   onDelete,
 }: {
   product: Product;
-  lang: string;
   t: TFn;
   onToggle: (id: number | string, patch: TogglePatch) => void;
   onDelete: (p: Product) => void;
@@ -231,18 +231,15 @@ function MobileProductCard({
                 display="block"
                 _hover={{ color: 'accent.goldDeep' }}
               >
-                {product.name_en}
-              </Text>
-              <Text fontSize="12px" color="text.muted" fontFamily="'El Messiri', serif" noOfLines={1}>
-                {product.name_ar}
+                {product.name_ar || product.name_en}
               </Text>
             </Box>
             <Text fontSize="14px" fontWeight={600} whiteSpace="nowrap" flexShrink={0}>
-              {formatPrice(product.base_price, lang)}
+              {formatPrice(product.base_price, 'ar')}
             </Text>
           </Flex>
           <Text fontSize="11px" color="text.muted" mt={1} noOfLines={1}>
-            {localized(product.category.name_en, product.category.name_ar, lang)} · {adminSizeLabel(t, product.size)}
+            {product.category.name_ar || product.category.name_en} · {adminMeasurementLabel(t, product)}
           </Text>
           {hasBadges && (
             <HStack spacing={1.5} mt={2} flexWrap="wrap">
@@ -309,13 +306,11 @@ function MobileProductCard({
 
 function SortableProductRow({
   product,
-  lang,
   t,
   onToggle,
   onDelete,
 }: {
   product: Product;
-  lang: string;
   t: TFn;
   onToggle: (id: number | string, patch: TogglePatch) => void;
   onDelete: (p: Product) => void;
@@ -353,17 +348,16 @@ function SortableProductRow({
         </Box>
       </Td>
       <Td maxW="200px">
-        <Text fontSize="13px" fontWeight={500} noOfLines={1}>{product.name_en}</Text>
-        <Text fontSize="11px" color="text.muted" fontFamily="'El Messiri', serif" noOfLines={1}>{product.name_ar}</Text>
-        <Text fontSize="10px" color="accent.goldDeep" mt={1}>{adminSizeLabel(t, product.size)}</Text>
+        <Text fontSize="13px" fontWeight={500} noOfLines={1}>{product.name_ar || product.name_en}</Text>
+        <Text fontSize="10px" color="accent.goldDeep" mt={1}>{adminMeasurementLabel(t, product)}</Text>
       </Td>
       <Td display={{ base: 'none', lg: 'table-cell' }}>
         <Text fontSize="12px" color="text.muted">
-          {localized(product.category.name_en, product.category.name_ar, lang)}
+          {product.category.name_ar || product.category.name_en}
         </Text>
       </Td>
       <Td isNumeric>
-        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(product.base_price, lang)}</Text>
+        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(product.base_price, 'ar')}</Text>
       </Td>
       <Td>
         <Stack spacing={1} align="flex-start">
@@ -428,8 +422,7 @@ function SortableProductRow({
 }
 
 export default function AdminProductsPage() {
-  const { t, i18n } = useTranslation('admin');
-  const lang = i18n.language;
+  const { t } = useTranslation('admin');
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -619,7 +612,7 @@ export default function AdminProductsPage() {
           <option value="">{t('filterCategory')}</option>
           {(cats.data ?? []).map((c) => (
             <option key={c.id} value={c.slug}>
-              {localized(c.name_en, c.name_ar, lang)}
+              {c.name_ar || c.name_en}
             </option>
           ))}
         </Select>
@@ -702,7 +695,6 @@ export default function AdminProductsPage() {
                         <SortableProductRow
                           key={p.id}
                           product={p}
-                          lang={lang}
                           t={t}
                           onToggle={handleToggle}
                           onDelete={(prod) => { setDeleteTarget(prod); openConfirm(); }}
@@ -747,7 +739,6 @@ export default function AdminProductsPage() {
                   <MobileProductCard
                     key={p.id}
                     product={p}
-                    lang={lang}
                     t={t}
                     onToggle={handleToggle}
                     onDelete={(prod) => { setDeleteTarget(prod); openConfirm(); }}
@@ -791,7 +782,7 @@ export default function AdminProductsPage() {
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         isLoading={deleteMutation.isPending}
         title={t('deleteConfirmTitle')}
-        body={`"${deleteTarget?.name_en ?? ''}" — ${t('deleteConfirmBody')}`}
+        body={`"${deleteTarget?.name_ar ?? deleteTarget?.name_en ?? ''}" — ${t('deleteConfirmBody')}`}
       />
     </Stack>
   );

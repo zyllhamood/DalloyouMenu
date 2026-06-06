@@ -30,6 +30,7 @@ class ProductListView(generics.ListAPIView):
         is_new = self.request.query_params.get('is_new')
         search = self.request.query_params.get('search')
         size_param = self.request.query_params.get('size')
+        weight_param = self.request.query_params.get('weight')
 
         if category_slug:
             queryset = queryset.filter(category__slug=category_slug)
@@ -41,12 +42,19 @@ class ProductListView(generics.ListAPIView):
             queryset = queryset.filter(
                 Q(name_en__icontains=search) | Q(name_ar__icontains=search)
             )
+        measurement_filter = Q()
         if size_param:
             VALID = {'SMALL', 'MEDIUM', 'LARGE'}
             requested = {s.strip().upper() for s in size_param.split(',')}
             requested &= VALID
             if requested:
-                queryset = queryset.filter(size__in=requested)
+                measurement_filter |= Q(size_mode='SIZE', size__in=requested)
+        if weight_param:
+            requested_weights = [w.strip() for w in weight_param.split(',') if w.strip()]
+            if requested_weights:
+                measurement_filter |= Q(size_mode='WEIGHT', weight_label__in=requested_weights)
+        if measurement_filter:
+            queryset = queryset.filter(measurement_filter)
         return queryset
 
 class ProductDetailView(generics.RetrieveAPIView):

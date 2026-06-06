@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Box, Text } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -21,8 +20,6 @@ const WORD_SIZE: Record<NonNullable<LogoProps['size']>, string> = {
 };
 
 export function Logo({ size = 'md', to = '/' }: LogoProps) {
-  const { i18n } = useTranslation();
-  const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
   const [iconFailed, setIconFailed] = useState(false);
 
   const iconH = ICON_HEIGHT[size];
@@ -85,17 +82,17 @@ export function Logo({ size = 'md', to = '/' }: LogoProps) {
 
       {/* ── Wordmark ── */}
       <Text
-        fontFamily={lang === 'ar' ? `'El Messiri', serif` : `'Cormorant Garamond', serif`}
+        fontFamily="'El Messiri', serif"
         fontSize={wordSize}
         fontWeight={500}
-        letterSpacing={lang === 'ar' ? '0' : '0.32em'}
-        textTransform={lang === 'ar' ? 'none' : 'uppercase'}
+        letterSpacing="0"
+        textTransform="none"
         color="text.primary"
         lineHeight={1}
         transition="color 400ms"
         _groupHover={{ color: 'accent.goldDeep' }}
       >
-        {lang === 'ar' ? 'داليو' : 'Dalloyou'}
+        داليو
       </Text>
     </Box>
   );

@@ -55,7 +55,6 @@ import { Pencil, Tag, Trash2 } from 'lucide-react';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import { categoriesList, categoryCreate, categoryUpdate, categoryDelete } from '../../lib/api';
 import type { Category } from '../../lib/api';
-import { slugify } from '../../lib/format';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 const FOCUS = { borderColor: 'accent.gold', boxShadow: '0 0 0 1px rgba(201,169,97,0.4)' };
@@ -103,7 +102,6 @@ function StatusPill({ active, t }: { active: boolean; t: TFn }) {
 // ─── Category form schema ─────────────────────────────────────────────────────
 
 const catSchema = z.object({
-  nameEn: z.string().min(1, 'Required').max(200),
   nameAr: z.string().min(1, 'Required').max(200),
   slug: z.string().min(1).max(200),
   isActive: z.boolean(),
@@ -155,10 +153,7 @@ function SortableRow({
         </Box>
       </Td>
       <Td>
-        <Text fontSize="13px" fontWeight={500}>{cat.name_en}</Text>
-      </Td>
-      <Td>
-        <Text fontSize="13px" fontFamily="'El Messiri', serif">{cat.name_ar}</Text>
+        <Text fontSize="13px" fontWeight={500} fontFamily="'El Messiri', serif">{cat.name_ar || cat.name_en}</Text>
       </Td>
       <Td>
         <Text fontSize="11px" color="text.muted" fontFamily="monospace">{cat.slug}</Text>
@@ -262,10 +257,7 @@ function SortableCard({
         </Box>
 
         <Box flex={1} minW={0}>
-          <Text fontSize="14px" fontWeight={600} noOfLines={1}>{cat.name_en}</Text>
-          <Text fontSize="12px" color="text.muted" fontFamily="'El Messiri', serif" noOfLines={1}>
-            {cat.name_ar}
-          </Text>
+          <Text fontSize="14px" fontWeight={600} noOfLines={1}>{cat.name_ar || cat.name_en}</Text>
           <Text fontSize="10px" color="text.muted" fontFamily="monospace" mt={0.5} noOfLines={1}>
             {cat.slug}
           </Text>
@@ -350,7 +342,7 @@ export default function AdminCategoriesPage() {
 
   const createMutation = useMutation({
     mutationFn: (payload: CatForm) =>
-      categoryCreate({ name_en: payload.nameEn, name_ar: payload.nameAr, slug: payload.slug }),
+      categoryCreate({ name_en: payload.nameAr, name_ar: payload.nameAr, slug: payload.slug }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['categoriesList'] });
       toast({ title: t('saved'), status: 'success', duration: 3000, position: 'top' });
@@ -520,7 +512,6 @@ export default function AdminCategoriesPage() {
                       <Tr>
                         <Th w="48px" />
                         <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.name')}</Th>
-                        <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.nameAr')}</Th>
                         <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.slug')}</Th>
                         <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.active')}</Th>
                         <Th fontSize="10px" letterSpacing="0.18em" color="text.muted">{t('table.actions')}</Th>
@@ -587,7 +578,7 @@ export default function AdminCategoriesPage() {
             {t('catForm.modalEditTitle')}
             {editTarget && (
               <Text as="span" fontSize="14px" fontFamily="body" fontWeight={400} color="text.muted" ms={2}>
-                — {editTarget.name_en}
+                — {editTarget.name_ar || editTarget.name_en}
               </Text>
             )}
           </ModalHeader>
@@ -599,7 +590,7 @@ export default function AdminCategoriesPage() {
                 onSubmit={(v) =>
                   updateMutation.mutate({
                     id: editTarget.id as number,
-                    payload: { name_en: v.nameEn, name_ar: v.nameAr, slug: v.slug },
+                    payload: { name_en: v.nameAr, name_ar: v.nameAr, slug: v.slug },
                   })
                 }
                 onCancel={handleCloseEdit}
@@ -616,7 +607,7 @@ export default function AdminCategoriesPage() {
         onClose={() => { closeConfirm(); setDeleteTarget(null); }}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id as number)}
         isLoading={deleteMutation.isPending}
-        body={`"${deleteTarget?.name_en ?? ''}" — ${t('deleteConfirmBody')}`}
+        body={`"${deleteTarget?.name_ar ?? deleteTarget?.name_en ?? ''}" — ${t('deleteConfirmBody')}`}
       />
     </Stack>
   );
@@ -639,32 +630,18 @@ function CategoryForm({
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<CatForm>({
     resolver: standardSchemaResolver(catSchema) as Resolver<CatForm>,
     defaultValues: initial
-      ? { nameEn: initial.name_en, nameAr: initial.name_ar, slug: initial.slug, isActive: true }
-      : { nameEn: '', nameAr: '', slug: '', isActive: true },
+      ? { nameAr: initial.name_ar || initial.name_en, slug: initial.slug, isActive: true }
+      : { nameAr: '', slug: '', isActive: true },
   });
-
-  const nameEn = watch('nameEn');
-  useEffect(() => {
-    if (!initial) setValue('slug', slugify(nameEn));
-  }, [nameEn, initial, setValue]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <Stack spacing={4}>
         <Flex gap={4} wrap="wrap" align="flex-start">
-          <FormControl isInvalid={!!errors.nameEn} isRequired flex={1} minW="160px">
-            <FormLabel fontSize="12px" fontWeight={500}>{t('catForm.nameEn')}</FormLabel>
-            <Input size="sm" borderRadius="sm" _focus={FOCUS} {...register('nameEn')} />
-            {errors.nameEn && (
-              <Text fontSize="11px" color="red.500" mt={1}>{errors.nameEn.message}</Text>
-            )}
-          </FormControl>
           <FormControl isInvalid={!!errors.nameAr} isRequired flex={1} minW="160px">
             <FormLabel fontSize="12px" fontWeight={500}>{t('catForm.nameAr')}</FormLabel>
             <Input size="sm" borderRadius="sm" dir="rtl" _focus={FOCUS} {...register('nameAr')} />

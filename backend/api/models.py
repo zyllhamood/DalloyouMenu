@@ -22,6 +22,10 @@ class Category(models.Model):
         super().save(*args, **kwargs)
 
 class Product(models.Model):
+    SIZE_MODE_CHOICES = (
+        ('SIZE', 'Size'),
+        ('WEIGHT', 'Weight'),
+    )
     SIZE_CHOICES = (
         ('SMALL', 'Small'),
         ('MEDIUM', 'Medium'),
@@ -35,7 +39,9 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
     styled_image = models.ImageField(upload_to='products/styled/')
     display_image = models.ImageField(upload_to='products/display/', blank=True)
-    size = models.CharField(max_length=20, choices=SIZE_CHOICES, default='LARGE')
+    size_mode = models.CharField(max_length=20, choices=SIZE_MODE_CHOICES, default='SIZE')
+    size = models.CharField(max_length=20, choices=SIZE_CHOICES, default='LARGE', blank=True, null=True)
+    weight_label = models.CharField(max_length=80, blank=True)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_new = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
@@ -48,4 +54,5 @@ class Product(models.Model):
         ordering = ['order', '-created_at']
 
     def __str__(self):
-        return f"{self.name_en} - {self.size}"
+        measurement = self.weight_label if self.size_mode == 'WEIGHT' else self.size
+        return f"{self.name_en} - {measurement}"

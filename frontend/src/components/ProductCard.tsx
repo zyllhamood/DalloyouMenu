@@ -4,8 +4,9 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import type { Product } from '../lib/api';
-import { formatPrice, localized } from '../lib/format';
+import { formatPrice } from '../lib/format';
 import { getPrimaryProductImage } from '../lib/productImages';
+import { getMeasurementLabel } from '../lib/productMeasurement';
 
 interface ProductCardProps {
   product: Product;
@@ -57,12 +58,12 @@ function NewBadge({ label }: { label: string }) {
 }
 
 export function ProductCard({ product, eager = false }: ProductCardProps) {
-  const { i18n, t } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
+  const lang = 'ar';
 
-  const name = localized(product.name_en, product.name_ar, lang);
-  const catName = localized(product.category.name_en, product.category.name_ar, lang);
-  const sizeName = t(`sizes.${product.size.toLowerCase()}`);
+  const name = product.name_ar || product.name_en;
+  const catName = product.category.name_ar || product.category.name_en;
+  const measurementLabel = getMeasurementLabel(product, t);
   const price = formatCardPrice(product, lang);
   const unavailable = !product.is_available;
   const isNew = Boolean(product.is_new) && !unavailable;
@@ -165,7 +166,7 @@ export function ProductCard({ product, eager = false }: ProductCardProps) {
           color="accent.goldDeep"
           mb={2}
         >
-          {catName} · {sizeName}
+          {measurementLabel ? `${catName} · ${measurementLabel}` : catName}
         </Text>
         <LinkOverlay
           as={unavailable ? 'span' : RouterLink}

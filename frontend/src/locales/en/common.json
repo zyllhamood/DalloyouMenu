@@ -32,20 +32,17 @@
     "new": "New",
     "zoomClose": "Close",
     "zoomHint": "Tap to zoom",
-    "size": "Size"
+    "size": "Size",
+    "measurement": "Size or weight"
   },
   "sizes": {
     "small": "Small",
     "medium": "Medium",
-    "large": "Large",
-    "servings": {
-      "small": "Serves 1-2 people",
-      "medium": "Serves 6-8 people",
-      "large": "Serves 8-10 people"
-    }
+    "large": "Large"
   },
   "filters": {
     "sizes": "Sizes",
+    "measurements": "Sizes & weights",
     "open": "Filters",
     "clear": "Clear filters"
   },

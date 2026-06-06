@@ -14,13 +14,11 @@ import HomeHero from '../components/HomeHero';
 import ProductsGrid, { type ViewMode } from '../components/ProductsGrid';
 import SectionHeading from '../components/SectionHeading';
 import { categoriesList, featuredProducts, productsList } from '../lib/api';
-import { localized } from '../lib/format';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 
 export default function HomePage() {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
   const [newArrivalsViewMode, setNewArrivalsViewMode] = useState<ViewMode>('grid');
 
   const featured = useQuery({
@@ -87,7 +85,7 @@ export default function HomePage() {
                 _groupHover={{ color: 'accent.goldDeep' }}
                 transition="color 400ms"
               >
-                {localized(c.name_en, c.name_ar, lang)}
+                {c.name_ar || c.name_en}
               </Text>
             </Box>
           ))}

@@ -95,6 +95,7 @@ export interface Category {
 
 export type SizeKey = 'small' | 'medium' | 'large';
 export type VariantSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+export type ProductSizeMode = 'SIZE' | 'WEIGHT';
 
 export interface Product {
   id: number;
@@ -108,7 +109,9 @@ export interface Product {
   display_image: string | null;
   styled_image: string | null;
   gallery?: string[];
-  size: VariantSize;
+  size_mode: ProductSizeMode;
+  size: VariantSize | null;
+  weight_label: string;
   base_price: number;     // normalised to Number at the API boundary (wire sends string)
   starting_price: number;
   currency?: string;
@@ -138,6 +141,8 @@ export interface ProductListParams {
   limit?: number;
   ordering?: string;
   size?: string;
+  weight?: string;
+  allPages?: boolean;
 }
 
 export interface AdminLoginPayload {
@@ -167,19 +172,42 @@ function normaliseListProduct(p: any): Product {
 }
 
 export const productsList = async (params: ProductListParams = {}): Promise<Paginated<Product>> => {
-  const { data } = await api.get<Paginated<any>>('/products/', {
-    params: {
-      category: params.category,
-      search: params.search,
-      featured: params.featured,
-      is_new: params.isNew,
-      page: params.page,
-      page_size: params.pageSize,
-      limit: params.limit,
-      ordering: params.ordering,
-      size: params.size,
-    },
-  });
+  const requestParams = {
+    category: params.category,
+    search: params.search,
+    featured: params.featured,
+    is_new: params.isNew,
+    page: params.page,
+    page_size: params.pageSize,
+    limit: params.limit,
+    ordering: params.ordering,
+    size: params.size,
+    weight: params.weight,
+  };
+
+  const { data } = await api.get<Paginated<any>>('/products/', { params: requestParams });
+
+  if (params.allPages && data.next) {
+    const results = [...data.results];
+    let page = Number(params.page ?? 1) + 1;
+    let next: string | null | undefined = data.next;
+
+    while (next) {
+      const res = await api.get<Paginated<any>>('/products/', {
+        params: { ...requestParams, page },
+      });
+      results.push(...res.data.results);
+      next = res.data.next ?? null;
+      page += 1;
+    }
+
+    return {
+      ...data,
+      next: null,
+      results: results.map(normaliseListProduct),
+    };
+  }
+
   return { ...data, results: data.results.map(normaliseListProduct) };
 };
 
@@ -291,6 +319,7 @@ export const adminProductsList = async (
       limit: params.limit,
       ordering: params.ordering,
       size: params.size,
+      weight: params.weight,
     },
   });
   return { ...data, results: data.results.map(normaliseListProduct) };

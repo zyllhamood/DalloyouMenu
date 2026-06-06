@@ -27,7 +27,6 @@ import {
   type ViewMode,
 } from '../components/ProductsGrid';
 import { categoriesList, productsList } from '../lib/api';
-import { localized } from '../lib/format';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
 type Size = 'SMALL' | 'MEDIUM' | 'LARGE';
@@ -47,6 +46,15 @@ function parseSizes(value: string | null): Set<Size> {
   return selected;
 }
 
+function parseWeights(value: string | null): Set<string> {
+  const selected = new Set<string>();
+  value?.split(',').forEach((raw) => {
+    const weight = raw.trim();
+    if (weight) selected.add(weight);
+  });
+  return selected;
+}
+
 function SearchGlyph() {
   return (
     <Box as="svg" viewBox="0 0 24 24" w="16px" h="16px" aria-hidden>
@@ -57,8 +65,7 @@ function SearchGlyph() {
 }
 
 export default function MenuPage() {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { categorySlug: pathCategory } = useParams<{ categorySlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,10 +74,13 @@ export default function MenuPage() {
   const activeCategory = pathCategory ?? queryCategory;
   const [search, setSearch] = useState(searchParams.get('q') ?? '');
   const [sizes, setSizes] = useState<Set<Size>>(() => parseSizes(searchParams.get('size')));
+  const [weights, setWeights] = useState<Set<string>>(() => parseWeights(searchParams.get('weight')));
   const sizeParam = useMemo(() => Array.from(sizes).join(',') || undefined, [sizes]);
+  const weightParam = useMemo(() => Array.from(weights).join(',') || undefined, [weights]);
 
   useEffect(() => {
     setSizes(parseSizes(searchParams.get('size')));
+    setWeights(parseWeights(searchParams.get('weight')));
   }, [searchParams]);
 
   // View mode (controlled here so the toggle lives in the filter bar)
@@ -103,16 +113,79 @@ export default function MenuPage() {
   });
 
   const products = useQuery({
-    queryKey: ['productsList', { category: activeCategory, search, size: sizeParam }],
+    queryKey: ['productsList', { category: activeCategory, search, size: sizeParam, weight: weightParam }],
     queryFn: () => productsList({
       category: activeCategory,
       search: search || undefined,
       size: sizeParam,
+      weight: weightParam,
+    }),
+    ...QUERY_OPTS,
+  });
+
+  const sizeOptionsProducts = useQuery({
+    queryKey: ['productsList.sizeOptions', { category: activeCategory, search }],
+    queryFn: () => productsList({
+      category: activeCategory,
+      search: search || undefined,
+      allPages: true,
     }),
     ...QUERY_OPTS,
   });
 
   const items = useMemo(() => products.data?.results ?? [], [products.data]);
+  const availableSizes = useMemo(() => {
+    const found = new Set<Size>();
+    (sizeOptionsProducts.data?.results ?? []).forEach((product) => {
+      if (product.size_mode === 'WEIGHT') return;
+      if (product.size && SIZE_FILTERS.includes(product.size)) found.add(product.size);
+    });
+    return SIZE_FILTERS.filter((size) => found.has(size));
+  }, [sizeOptionsProducts.data]);
+  const availableWeights = useMemo(() => {
+    const found = new Set<string>();
+    (sizeOptionsProducts.data?.results ?? []).forEach((product) => {
+      if (product.size_mode !== 'WEIGHT') return;
+      const weight = product.weight_label?.trim();
+      if (weight) found.add(weight);
+    });
+    return Array.from(found);
+  }, [sizeOptionsProducts.data]);
+  const availableSizeKey = availableSizes.join(',');
+  const availableWeightKey = availableWeights.join(',');
+
+  useEffect(() => {
+    if (sizeOptionsProducts.isLoading) return;
+    const allowedSizes = new Set(availableSizes);
+    const allowedWeights = new Set(availableWeights);
+    const nextSizes = new Set(Array.from(sizes).filter((size) => allowedSizes.has(size)));
+    const nextWeights = new Set(Array.from(weights).filter((weight) => allowedWeights.has(weight)));
+    if (nextSizes.size === sizes.size && nextWeights.size === weights.size) return;
+    setSizes(nextSizes);
+    setWeights(nextWeights);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        const sizeValue = Array.from(nextSizes).join(',');
+        const weightValue = Array.from(nextWeights).join(',');
+        if (sizeValue) next.set('size', sizeValue);
+        else next.delete('size');
+        if (weightValue) next.set('weight', weightValue);
+        else next.delete('weight');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [
+    availableSizeKey,
+    availableWeightKey,
+    availableSizes,
+    availableWeights,
+    sizeOptionsProducts.isLoading,
+    setSearchParams,
+    sizes,
+    weights,
+  ]);
 
   const selectCategory = (slug?: string) => {
     const next = new URLSearchParams(searchParams);
@@ -138,6 +211,23 @@ export default function MenuPage() {
         const value = Array.from(nextSizes).join(',');
         if (value) next.set('size', value);
         else next.delete('size');
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const toggleWeight = (weight: string) => {
+    const nextWeights = new Set(weights);
+    if (nextWeights.has(weight)) nextWeights.delete(weight);
+    else nextWeights.add(weight);
+    setWeights(nextWeights);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        const value = Array.from(nextWeights).join(',');
+        if (value) next.set('weight', value);
+        else next.delete('weight');
         return next;
       },
       { replace: true },
@@ -198,7 +288,7 @@ export default function MenuPage() {
                 {(categories.data ?? []).map((c) => (
                   <FilterPill
                     key={c.id}
-                    label={localized(c.name_en, c.name_ar, lang)}
+                    label={c.name_ar || c.name_en}
                     active={activeCategory === c.slug}
                     onClick={() => selectCategory(c.slug)}
                   />
@@ -206,18 +296,28 @@ export default function MenuPage() {
               </FilterRow>
             </Box>
 
-            <Box flex={{ base: 'none', lg: '0 0 auto' }} minW={0}>
-              <FilterRow label={t('filters.sizes')}>
-                {SIZE_FILTERS.map((size) => (
-                  <FilterPill
-                    key={size}
-                    label={t(SIZE_LABEL_KEYS[size])}
-                    active={sizes.has(size)}
-                    onClick={() => toggleSize(size)}
-                  />
-                ))}
-              </FilterRow>
-            </Box>
+            {(availableSizes.length > 0 || availableWeights.length > 0) && (
+              <Box flex={{ base: 'none', lg: '0 0 auto' }} minW={0}>
+                <FilterRow label={t('filters.measurements')}>
+                  {availableSizes.map((size) => (
+                    <FilterPill
+                      key={size}
+                      label={t(SIZE_LABEL_KEYS[size])}
+                      active={sizes.has(size)}
+                      onClick={() => toggleSize(size)}
+                    />
+                  ))}
+                  {availableWeights.map((weight) => (
+                    <FilterPill
+                      key={weight}
+                      label={weight}
+                      active={weights.has(weight)}
+                      onClick={() => toggleWeight(weight)}
+                    />
+                  ))}
+                </FilterRow>
+              </Box>
+            )}
 
             <Flex
               align="center"
@@ -335,9 +435,6 @@ interface FilterPillProps {
 }
 
 function FilterPill({ label, active, onClick }: FilterPillProps) {
-  const { i18n } = useTranslation();
-  const ar = i18n.language?.startsWith('ar');
-
   return (
     <Button
       onClick={onClick}
@@ -346,9 +443,9 @@ function FilterPill({ label, active, onClick }: FilterPillProps) {
       px={5}
       borderRadius="full"
       flexShrink={0}
-      fontSize={ar ? '13px' : '12px'}
-      letterSpacing={ar ? '0' : '0.16em'}
-      textTransform={ar ? 'none' : 'uppercase'}
+      fontSize="13px"
+      letterSpacing="0"
+      textTransform="none"
       bg={active ? 'warm.black' : 'transparent'}
       color={active ? 'accent.gold' : 'text.primary'}
       border="1px solid"

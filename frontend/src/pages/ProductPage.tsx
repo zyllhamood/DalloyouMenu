@@ -25,10 +25,10 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { X } from 'lucide-react';
 
 import { productDetail } from '../lib/api';
-import { formatPrice, isArabic, localized } from '../lib/format';
+import { formatPrice } from '../lib/format';
+import { getMeasurementLabel } from '../lib/productMeasurement';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
-const toSizeKey = (size: string | undefined) => (size ?? 'LARGE').toLowerCase() as 'small' | 'medium' | 'large';
 
 function WhatsAppGlyph() {
   return (
@@ -51,9 +51,8 @@ function ZoomGlyph() {
 }
 
 export default function ProductPage() {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
-  const ar = isArabic(lang);
+  const { t } = useTranslation();
+  const lang = 'ar';
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -126,20 +125,16 @@ export default function ProductPage() {
     );
   }
 
-  const productName = localized(product.name_en, product.name_ar, lang);
-  const description =
-    localized(product.description_en, product.description_ar, lang) || t('page.productDescFallback');
-  const categoryName = localized(product.category.name_en, product.category.name_ar, lang);
+  const productName = product.name_ar || product.name_en;
+  const description = product.description_ar || product.description_en || t('page.productDescFallback');
+  const categoryName = product.category.name_ar || product.category.name_en;
   const price = product.base_price;
-  const sizeKey = toSizeKey(product.size);
-  const sizeName = t(`sizes.${sizeKey}`);
-  const servings = t(`sizes.servings.${sizeKey}`);
+  const measurementLabel = getMeasurementLabel(product, t);
 
   const openWhatsApp = () => {
     const number = import.meta.env.VITE_WHATSAPP_NUMBER ?? '966532370777';
-    const message = ar
-      ? `السلام عليكم،\nأرغب بطلب: ${productName} (${sizeName})\nالسعر: ${price} ر.س`
-      : `Hello,\nI'd like to order: ${productName} (${sizeName})\nPrice: SAR ${price}`;
+    const measurementText = measurementLabel ? ` (${measurementLabel})` : '';
+    const message = `السلام عليكم،\nأرغب بطلب: ${productName}${measurementText}\nالسعر: ${price} ر.س`;
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -161,7 +156,7 @@ export default function ProductPage() {
           letterSpacing="0.14em"
           textTransform="uppercase"
           color="text.muted"
-          separator={ar ? '‹' : '›'}
+          separator="‹"
         >
           <BreadcrumbItem>
             <BreadcrumbLink as={RouterLink} to="/" _hover={{ color: 'accent.goldDeep' }}>
@@ -321,7 +316,7 @@ export default function ProductPage() {
                   textTransform="uppercase"
                   color="text.muted"
                 >
-                  {t('product.size')}
+                  {t('product.measurement')}
                 </Text>
                 <Box
                   display="inline-flex"
@@ -337,14 +332,7 @@ export default function ProductPage() {
                   borderColor="accent.gold"
                 >
                   <Text fontSize="13px" fontWeight={600}>
-                    {sizeName}
-                  </Text>
-                  <Text
-                    fontSize="12px"
-                    color="text.onDark"
-                    opacity={0.82}
-                  >
-                    {servings}
+                    {measurementLabel}
                   </Text>
                 </Box>
               </Stack>

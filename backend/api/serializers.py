@@ -16,7 +16,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'name_en', 'name_ar', 'category', 'display_image',
-            'styled_image', 'size', 'base_price', 'starting_price',
+            'styled_image', 'size_mode', 'size', 'weight_label', 'base_price', 'starting_price',
             'is_new', 'is_featured', 'is_available',
         )
 
@@ -40,11 +40,26 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'name_en', 'name_ar', 'description_en', 'description_ar',
-            'category_id', 'display_image', 'styled_image', 'size', 'base_price',
+            'category_id', 'display_image', 'styled_image', 'size_mode', 'size', 'weight_label', 'base_price',
             'is_new', 'is_featured', 'is_available', 'order',
         )
 
     def validate(self, attrs):
+        size_mode = attrs.get('size_mode', getattr(self.instance, 'size_mode', 'SIZE'))
+        size = attrs.get('size', getattr(self.instance, 'size', None))
+        weight_label = attrs.get('weight_label', getattr(self.instance, 'weight_label', ''))
+
+        if size_mode == 'WEIGHT':
+            if not str(weight_label or '').strip():
+                raise serializers.ValidationError({'weight_label': 'Weight label is required.'})
+            attrs['size'] = None
+            attrs['weight_label'] = str(weight_label).strip()
+        else:
+            if not size:
+                raise serializers.ValidationError({'size': 'Size is required.'})
+            attrs['size_mode'] = 'SIZE'
+            attrs['weight_label'] = ''
+
         if self.instance is None:
             if not attrs.get('display_image'):
                 raise serializers.ValidationError({'display_image': 'Display image is required.'})

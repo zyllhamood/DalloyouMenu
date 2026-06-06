@@ -22,7 +22,7 @@ import { Package, Plus, Star, Tag } from 'lucide-react';
 
 import StatCard from '../../components/admin/StatCard';
 import { adminProductsList, categoriesList, productsList } from '../../lib/api';
-import { formatPrice, localized } from '../../lib/format';
+import { formatPrice } from '../../lib/format';
 import { getPrimaryProductImage } from '../../lib/productImages';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -55,8 +55,7 @@ function StatusBadge({ label, scheme }: { label: string; scheme: 'gold' | 'new' 
 }
 
 export default function AdminDashboardPage() {
-  const { t, i18n } = useTranslation('admin');
-  const lang = i18n.language;
+  const { t } = useTranslation('admin');
   const user = useAuthStore((s) => s.user);
   const displayName = user?.name ?? user?.email?.split('@')[0] ?? '';
 
@@ -279,16 +278,16 @@ export default function AdminDashboardPage() {
                           _hover={{ color: 'accent.goldDeep' }}
                           noOfLines={1}
                         >
-                          {localized(p.name_en, p.name_ar, lang)}
+                          {p.name_ar || p.name_en}
                         </Text>
                       </Td>
                       <Td display={{ base: 'none', md: 'table-cell' }}>
                         <Text fontSize="12px" color="text.muted">
-                          {localized(p.category.name_en, p.category.name_ar, lang)}
+                          {p.category.name_ar || p.category.name_en}
                         </Text>
                       </Td>
                       <Td isNumeric>
-                        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(p.base_price, lang)}</Text>
+                        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(p.base_price, 'ar')}</Text>
                       </Td>
                       <Td>
                         <HStack spacing={1} flexWrap="wrap">

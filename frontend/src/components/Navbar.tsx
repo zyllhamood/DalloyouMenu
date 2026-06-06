@@ -12,7 +12,6 @@ import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import Logo from './Logo';
-import LanguageToggle from './LanguageToggle';
 import WhatsAppIcon from './WhatsAppIcon';
 
 const NAV_LINKS = [
@@ -21,17 +20,14 @@ const NAV_LINKS = [
 ] as const;
 
 function NavLink({ to, label, active }: { to: string; label: string; active: boolean }) {
-  const { i18n } = useTranslation();
-  const ar = i18n.language?.startsWith('ar');
-
   return (
     <ChakraLink
       as={RouterLink}
       to={to}
       position="relative"
-      fontSize={ar ? '16px' : '13px'}
-      letterSpacing={ar ? '0' : '0.18em'}
-      textTransform={ar ? 'none' : 'uppercase'}
+      fontSize="16px"
+      letterSpacing="0"
+      textTransform="none"
       color={active ? 'accent.goldDeep' : 'text.primary'}
       fontWeight={active ? 500 : 400}
       _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
@@ -114,9 +110,6 @@ export function Navbar() {
           </HStack>
 
           <HStack spacing={4} align="center">
-            <Box display={{ base: 'none', md: 'block' }}>
-              <LanguageToggle />
-            </Box>
             <Box display={{ base: 'none', sm: 'block' }}>
               <WhatsAppIcon />
             </Box>
@@ -173,7 +166,6 @@ export function Navbar() {
             })}
           </VStack>
           <HStack justify="space-between" pt={5}>
-            <LanguageToggle />
             <WhatsAppIcon />
           </HStack>
         </Container>
