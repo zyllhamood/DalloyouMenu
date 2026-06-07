@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Product
+from .models import Category, Product, Visit
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -66,3 +66,19 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             if not attrs.get('styled_image'):
                 raise serializers.ValidationError({'styled_image': 'Featured image is required.'})
         return attrs
+
+
+class VisitCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Visit
+        fields = ('visitor_id', 'path', 'referrer', 'device_type')
+
+    def validate_device_type(self, value):
+        valid = {choice[0] for choice in Visit.DEVICE_CHOICES}
+        return value if value in valid else 'other'
+
+
+class VisitListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Visit
+        fields = ('id', 'visitor_id', 'path', 'device_type', 'created_at')

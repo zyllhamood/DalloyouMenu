@@ -8,6 +8,8 @@ from .views import (
     FeaturedProductsView,
     AdminCategoryViewSet,
     AdminProductViewSet,
+    VisitCreateView,
+    AdminVisitStatsView,
     MeView
 )
 
@@ -24,6 +26,8 @@ urlpatterns = [
     path('products/', ProductListView.as_view(), name='product-list'),
     path('products/featured/', FeaturedProductsView.as_view(), name='product-featured'),
     path('products/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
+    path('visits/', VisitCreateView.as_view(), name='visit-create'),
+    path('admin/visits/', AdminVisitStatsView.as_view(), name='admin-visit-stats'),
 
     path('', include(router.urls)),
 ]

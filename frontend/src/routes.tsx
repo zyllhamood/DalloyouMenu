@@ -14,6 +14,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminProductFormPage from './pages/admin/AdminProductFormPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import AdminVisitsPage from './pages/admin/AdminVisitsPage';
 
 export function AppRoutes() {
   return (
@@ -40,6 +41,7 @@ export function AppRoutes() {
         <Route path="/admin/products/new" element={<AdminProductFormPage />} />
         <Route path="/admin/products/:id" element={<AdminProductFormPage />} />
         <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+        <Route path="/admin/visits" element={<AdminVisitsPage />} />
       </Route>
     </Routes>
   );

@@ -8,6 +8,38 @@
   "dashboard": "Dashboard",
   "products": "Products",
   "categories": "Categories",
+  "visits": {
+    "title": "Visits",
+    "subtitle": "Track customer site visits by date range and device type.",
+    "uniqueOnly": "Unique only",
+    "daily": "Daily visits",
+    "recent": "Recent visits",
+    "refresh": "Refresh",
+    "empty": "No visits match the current filters.",
+    "stats": {
+      "total": "Total visits",
+      "unique": "Unique visitors"
+    },
+    "devices": {
+      "all": "All devices",
+      "desktop": "Laptop / desktop",
+      "mobile": "Mobile",
+      "tablet": "Tablet",
+      "other": "Other"
+    },
+    "days": {
+      "7": "Last 7 days",
+      "30": "Last 30 days",
+      "90": "Last 90 days",
+      "365": "Last year"
+    },
+    "table": {
+      "time": "Time",
+      "device": "Device",
+      "path": "Page",
+      "visitor": "Visitor"
+    }
+  },
   "logout": "Sign Out",
   "viewSite": "View Site",
   "openMenu": "Open menu",

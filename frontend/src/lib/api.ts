@@ -156,6 +156,53 @@ export interface AdminLoginResponse {
   user: { id: number | string; email: string; name?: string };
 }
 
+export type VisitDevice = 'desktop' | 'mobile' | 'tablet' | 'other';
+
+export interface VisitStatsParams {
+  days?: number;
+  device?: VisitDevice | 'all';
+  unique?: boolean;
+  recentPage?: number;
+  recentPageSize?: number;
+}
+
+export interface VisitStats {
+  days: number;
+  device: VisitDevice | 'all';
+  unique: boolean;
+  totals: {
+    total: number;
+    unique: number;
+    desktop: number;
+    mobile: number;
+    tablet: number;
+    other: number;
+  };
+  daily: Array<{
+    date: string;
+    count: number;
+    desktop: number;
+    mobile: number;
+    tablet: number;
+    other: number;
+  }>;
+  recent: Array<{
+    id: number;
+    visitor_id: string;
+    path: string;
+    device_type: VisitDevice;
+    created_at: string;
+  }>;
+  recent_pagination: {
+    count: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    has_previous: boolean;
+    has_next: boolean;
+  };
+}
+
 // ─── Endpoints ────────────────────────────────────────────────────────────
 
 export const categoriesList = async (): Promise<Category[]> => {
@@ -234,6 +281,28 @@ export const adminLogin = async (payload: AdminLoginPayload): Promise<AdminLogin
 
 export const adminMe = async () => {
   const { data } = await api.get<AdminLoginResponse['user']>('/auth/me/');
+  return data;
+};
+
+export const visitCreate = async (payload: {
+  visitor_id: string;
+  path: string;
+  referrer?: string;
+  device_type: VisitDevice;
+}): Promise<void> => {
+  await api.post('/visits/', payload);
+};
+
+export const adminVisitStats = async (params: VisitStatsParams = {}): Promise<VisitStats> => {
+  const { data } = await api.get<VisitStats>('/admin/visits/', {
+    params: {
+      days: params.days,
+      device: params.device,
+      unique: params.unique,
+      recent_page: params.recentPage,
+      recent_page_size: params.recentPageSize,
+    },
+  });
   return data;
 };
 

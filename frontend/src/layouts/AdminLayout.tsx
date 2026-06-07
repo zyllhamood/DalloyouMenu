@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ChevronRight,
   ExternalLink,
+  Eye,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -46,6 +47,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin', labelKey: 'dashboard', icon: <LayoutDashboard size={16} />, end: true },
   { to: '/admin/products', labelKey: 'products', icon: <Package size={16} /> },
   { to: '/admin/categories', labelKey: 'categories', icon: <Tag size={16} /> },
+  { to: '/admin/visits', labelKey: 'visits.title', icon: <Eye size={16} /> },
 ];
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────
@@ -70,6 +72,9 @@ function getCrumbs(path: string, t: TFn): Crumb[] {
   }
   if (path.startsWith('/admin/categories')) {
     return [{ label: t('categories') }];
+  }
+  if (path.startsWith('/admin/visits')) {
+    return [{ label: t('visits.title') }];
   }
   return [];
 }

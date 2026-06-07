@@ -37,12 +37,12 @@ export function StatCard({
         borderRadius: '3px 0 0 3px',
       }}
     >
-      {/* Icon top-right */}
+      {/* Keep the decorative icon visually on the left in admin stat cards. */}
       {icon && (
         <Box
           position="absolute"
           top={4}
-          insetInlineEnd={4}
+          left={4}
           color={accent}
           opacity={0.35}
         >

@@ -56,3 +56,30 @@ class Product(models.Model):
     def __str__(self):
         measurement = self.weight_label if self.size_mode == 'WEIGHT' else self.size
         return f"{self.name_en} - {measurement}"
+
+
+class Visit(models.Model):
+    DEVICE_CHOICES = (
+        ('desktop', 'Desktop'),
+        ('mobile', 'Mobile'),
+        ('tablet', 'Tablet'),
+        ('other', 'Other'),
+    )
+
+    visitor_id = models.CharField(max_length=80, db_index=True)
+    path = models.CharField(max_length=500)
+    referrer = models.URLField(blank=True)
+    device_type = models.CharField(max_length=20, choices=DEVICE_CHOICES, default='other', db_index=True)
+    user_agent = models.TextField(blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at', 'device_type'], name='api_visit_created_5bb86d_idx'),
+            models.Index(fields=['visitor_id', 'created_at'], name='api_visit_visitor_598020_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.device_type} · {self.path}"
