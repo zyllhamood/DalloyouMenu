@@ -23,15 +23,26 @@ interface HomeHeroProps {
   isLoading?: boolean;
 }
 
+const HERO_INTERVAL_MS = 5000;
+
+function shuffleProducts(products: Product[]): Product[] {
+  const shuffled = [...products];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function HomeHero({ products, isLoading = false }: HomeHeroProps) {
   const { t } = useTranslation();
 
   const slides = useMemo(
-    () => products.filter((p) => p.styled_image),
+    () => shuffleProducts(products.filter((p) => p.styled_image)),
     [products],
   );
 
-  const carousel = useCarousel({ length: slides.length });
+  const carousel = useCarousel({ length: slides.length, interval: HERO_INTERVAL_MS });
 
   // Preload the next slide's image to avoid flash on transition
   useEffect(() => {

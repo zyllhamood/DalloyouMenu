@@ -22,13 +22,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { X } from 'lucide-react';
+import { ExternalLink, X } from 'lucide-react';
 
 import { productDetail } from '../lib/api';
 import { formatPrice } from '../lib/format';
 import { getMeasurementLabel } from '../lib/productMeasurement';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
+const KEETA_ORDER_URL = 'https://url.mykeeta.com/oI6Yp71z';
 
 function WhatsAppGlyph() {
   return (
@@ -136,6 +137,10 @@ export default function ProductPage() {
     const measurementText = measurementLabel ? ` (${measurementLabel})` : '';
     const message = `السلام عليكم،\nأرغب بطلب: ${productName}${measurementText}\nالسعر: ${price} ر.س`;
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const openKeeta = () => {
+    window.open(KEETA_ORDER_URL, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -338,28 +343,43 @@ export default function ProductPage() {
               </Stack>
 
               <Stack spacing={2}>
-                <Button
-                  onClick={openWhatsApp}
-                  w="100%"
-                  h="56px"
-                  bg="warm.black"
-                  color="accent.gold"
-                  border="1px solid"
-                  borderColor="accent.gold"
-                  fontSize="13px"
-                  letterSpacing="0.18em"
-                  textTransform="uppercase"
-                  _hover={{
-                    bg: 'accent.gold',
-                    color: 'warm.black',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 'goldGlow',
-                  }}
-                  isDisabled={!product.is_available}
-                  leftIcon={<WhatsAppGlyph />}
-                >
-                  {product.is_available ? t('product.orderViaWhatsapp') : t('product.unavailable')}
-                </Button>
+                <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} w="100%">
+                  <Button
+                    onClick={openWhatsApp}
+                    flex={1}
+                    h="56px"
+                    bg="warm.black"
+                    color="accent.gold"
+                    border="1px solid"
+                    borderColor="accent.gold"
+                    fontSize="13px"
+                    letterSpacing="0.12em"
+                    textTransform="uppercase"
+                    _hover={{
+                      bg: 'accent.gold',
+                      color: 'warm.black',
+                      transform: 'translateY(-2px)',
+                      boxShadow: 'goldGlow',
+                    }}
+                    isDisabled={!product.is_available}
+                    leftIcon={<WhatsAppGlyph />}
+                  >
+                    {product.is_available ? t('product.orderViaWhatsapp') : t('product.unavailable')}
+                  </Button>
+                  <Button
+                    onClick={openKeeta}
+                    flex={1}
+                    h="56px"
+                    variant="goldOutline"
+                    fontSize="13px"
+                    letterSpacing="0.12em"
+                    textTransform="uppercase"
+                    isDisabled={!product.is_available}
+                    leftIcon={<ExternalLink size={16} />}
+                  >
+                    {t('product.orderViaKeeta')}
+                  </Button>
+                </Stack>
                 <Text fontSize="11px" color="text.muted" letterSpacing="0.04em">
                   {t('product.whatsappNotice')}
                 </Text>

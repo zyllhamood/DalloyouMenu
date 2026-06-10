@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER ?? '966532370777';
+const KEETA_ORDER_URL = 'https://url.mykeeta.com/oI6Yp71z';
 
 const BRANCH_1_MAPS = 'https://maps.google.com?q=%D8%AF%D8%A7%D9%84%D9%8A%D9%88+%D8%A7%D9%84%D8%AE%D8%A8%D8%B1';
 const BRANCH_2_MAPS = 'https://maps.app.goo.gl/GbjJkWRAbfvi9tTp6';
@@ -141,33 +142,59 @@ export function Footer() {
                 {t('hero.tagline')}
               </Text>
 
-              {/* WhatsApp CTA */}
-              <Button
-                as={ChakraLink}
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                isExternal
-                variant="outline"
-                size="sm"
-                h="40px"
-                px={5}
-                borderRadius="full"
-                leftIcon={<WhatsAppGlyph />}
-                borderColor="border.gold"
-                color="accent.goldDeep"
-                fontSize="11px"
-                letterSpacing="0.14em"
-                textTransform="uppercase"
-                alignSelf="flex-start"
-                transition="all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-                _hover={{
-                  bg: 'accent.gold',
-                  borderColor: 'accent.gold',
-                  color: 'warm.black',
-                  textDecoration: 'none',
-                }}
-              >
-                {t('footer.whatsappCta')}
-              </Button>
+              <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} align="flex-start">
+                {/* WhatsApp CTA */}
+                <Button
+                  as={ChakraLink}
+                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  isExternal
+                  variant="outline"
+                  size="sm"
+                  h="40px"
+                  px={5}
+                  borderRadius="full"
+                  leftIcon={<WhatsAppGlyph />}
+                  borderColor="border.gold"
+                  color="accent.goldDeep"
+                  fontSize="11px"
+                  letterSpacing="0.14em"
+                  textTransform="uppercase"
+                  transition="all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+                  _hover={{
+                    bg: 'accent.gold',
+                    borderColor: 'accent.gold',
+                    color: 'warm.black',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {t('footer.whatsappCta')}
+                </Button>
+                <Button
+                  as={ChakraLink}
+                  href={KEETA_ORDER_URL}
+                  isExternal
+                  variant="outline"
+                  size="sm"
+                  h="40px"
+                  px={5}
+                  borderRadius="full"
+                  leftIcon={<ExternalLink size={14} />}
+                  borderColor="border.gold"
+                  color="accent.goldDeep"
+                  fontSize="11px"
+                  letterSpacing="0.14em"
+                  textTransform="uppercase"
+                  transition="all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+                  _hover={{
+                    bg: 'accent.gold',
+                    borderColor: 'accent.gold',
+                    color: 'warm.black',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {t('footer.keetaCta')}
+                </Button>
+              </Stack>
 
               {/* Social icon buttons */}
               <Flex mt={4} justify={{ base: 'center', md: 'flex-start' }}>

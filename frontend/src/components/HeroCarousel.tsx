@@ -8,7 +8,7 @@ import type { Product } from '../lib/api';
 import { formatStartingFrom } from '../lib/format';
 
 const STYLED_FALLBACK = 'https://placehold.co/800x800/FFFFFF/C9A961?text=Dalloyou&font=cormorant';
-const SLIDE_INTERVAL_MS = 4000;
+const SLIDE_INTERVAL_MS = 5000;
 const FADE_MS = 0.4;
 
 interface HeroCarouselProps {

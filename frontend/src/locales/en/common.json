@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "menu": "Menu",
+    "dashboard": "Dashboard",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
   },
@@ -21,6 +22,7 @@
   "product": {
     "orderNow": "Order Now",
     "orderViaWhatsapp": "Order via WhatsApp",
+    "orderViaKeeta": "Order via Keeta",
     "unavailable": "Currently Unavailable",
     "whatsappNotice": "You'll be redirected to WhatsApp to complete your order.",
     "comingSoon": "Online ordering and payment coming soon.",
@@ -75,6 +77,7 @@
   },
   "footer": {
     "whatsappCta": "Message us on WhatsApp",
+    "keetaCta": "Order via Keeta",
     "branches": "Our Branches",
     "openInMaps": "Open in Maps",
     "copyright": "All rights reserved.",

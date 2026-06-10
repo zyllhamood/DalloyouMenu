@@ -13,8 +13,9 @@ import { useTranslation } from 'react-i18next';
 
 import Logo from './Logo';
 import WhatsAppIcon from './WhatsAppIcon';
+import { useAuthStore } from '../stores/authStore';
 
-const NAV_LINKS = [
+const PUBLIC_NAV_LINKS = [
   { to: '/', key: 'nav.home' },
   { to: '/menu', key: 'nav.menu' },
 ] as const;
@@ -70,8 +71,14 @@ function CloseGlyph() {
 export function Navbar() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const token = useAuthStore((s) => s.token);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navLinks = hydrated && token
+    ? [...PUBLIC_NAV_LINKS, { to: '/admin', key: 'nav.dashboard' }]
+    : PUBLIC_NAV_LINKS;
 
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
@@ -104,7 +111,7 @@ export function Navbar() {
           <Logo />
 
           <HStack spacing={10} display={{ base: 'none', md: 'flex' }}>
-            {NAV_LINKS.map((l) => (
+            {navLinks.map((l) => (
               <NavLink key={l.to} to={l.to} label={t(l.key)} active={isActive(l.to)} />
             ))}
           </HStack>
@@ -144,7 +151,7 @@ export function Navbar() {
       >
         <Container maxW="1280px" px={{ base: 6, md: 10 }} py={6}>
           <VStack as="nav" spacing={0} align="stretch">
-            {NAV_LINKS.map((l) => {
+            {navLinks.map((l) => {
               const active = isActive(l.to);
               return (
                 <ChakraLink

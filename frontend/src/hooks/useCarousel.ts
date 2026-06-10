@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const DEFAULT_INTERVAL_MS = 4000;
+const DEFAULT_INTERVAL_MS = 5000;
 
 export interface UseCarouselReturn {
   currentIndex: number;
@@ -13,7 +13,7 @@ export interface UseCarouselReturn {
 
 interface UseCarouselOptions {
   length: number;
-  /** Auto-advance interval in ms (default 4000) */
+  /** Auto-advance interval in ms (default 5000) */
   interval?: number;
 }
 

@@ -2,6 +2,7 @@
   "nav": {
     "home": "الرئيسية",
     "menu": "القائمة",
+    "dashboard": "لوحة التحكم",
     "openMenu": "فتح القائمة",
     "closeMenu": "إغلاق القائمة"
   },
@@ -21,6 +22,7 @@
   "product": {
     "orderNow": "اطلب الآن",
     "orderViaWhatsapp": "اطلب عبر واتساب",
+    "orderViaKeeta": "اطلب عبر كيتا",
     "unavailable": "غير متوفر حالياً",
     "whatsappNotice": "سيتم تحويلك إلى واتساب لإتمام طلبك.",
     "comingSoon": "سيتم إضافة الطلب والدفع من الموقع قريباً.",
@@ -75,6 +77,7 @@
   },
   "footer": {
     "whatsappCta": "راسلنا عبر واتساب",
+    "keetaCta": "اطلب عبر كيتا",
     "branches": "فروعنا",
     "openInMaps": "افتح في الخرائط",
     "copyright": "جميع الحقوق محفوظة.",

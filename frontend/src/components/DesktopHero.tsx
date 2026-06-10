@@ -26,7 +26,7 @@ import type { UseCarouselReturn } from '../hooks/useCarousel';
 import { formatStartingFrom } from '../lib/format';
 
 const FALLBACK = 'https://placehold.co/800x800/FFFFFF/C9A961?text=Dalloyou&font=cormorant';
-const SLIDE_INTERVAL_MS = 4000;
+const SLIDE_INTERVAL_MS = 5000;
 const FADE_DURATION = 0.4;
 
 // ── Inline chevron glyphs ────────────────────────────────────────────────────
