@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Box,
   Container,
@@ -68,6 +68,92 @@ function CloseGlyph() {
   );
 }
 
+function InstagramGlyph() {
+  return (
+    <Box
+      as="svg"
+      width="18px"
+      height="18px"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </Box>
+  );
+}
+
+function TikTokGlyph() {
+  return (
+    <Box
+      as="svg"
+      width="18px"
+      height="18px"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.55a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.08z" />
+    </Box>
+  );
+}
+
+function SocialIconLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <ChakraLink
+      href={href}
+      isExternal
+      aria-label={label}
+      display="inline-flex"
+      alignItems="center"
+      justifyContent="center"
+      w="36px"
+      h="36px"
+      borderRadius="full"
+      border="1px solid"
+      borderColor="border.gold"
+      color="accent.goldDeep"
+      transition="all 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+      _hover={{
+        bg: 'accent.gold',
+        color: 'warm.black',
+        textDecoration: 'none',
+        transform: 'translateY(-2px)',
+      }}
+    >
+      {children}
+    </ChakraLink>
+  );
+}
+
+function SocialLinks() {
+  return (
+    <HStack spacing={2}>
+      <WhatsAppIcon />
+      <SocialIconLink href="https://www.instagram.com/dalloyauksa" label="Instagram">
+        <InstagramGlyph />
+      </SocialIconLink>
+      <SocialIconLink href="https://www.tiktok.com/@dalloyauksa" label="TikTok">
+        <TikTokGlyph />
+      </SocialIconLink>
+    </HStack>
+  );
+}
+
 export function Navbar() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
@@ -118,7 +204,7 @@ export function Navbar() {
 
           <HStack spacing={4} align="center">
             <Box display={{ base: 'none', sm: 'block' }}>
-              <WhatsAppIcon />
+              <SocialLinks />
             </Box>
             <IconButton
               display={{ base: 'inline-flex', md: 'none' }}
@@ -173,7 +259,7 @@ export function Navbar() {
             })}
           </VStack>
           <HStack justify="space-between" pt={5}>
-            <WhatsAppIcon />
+            <SocialLinks />
           </HStack>
         </Container>
       </Box>

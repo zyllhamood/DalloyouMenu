@@ -342,19 +342,28 @@ export default function ProductPage() {
                 </Box>
               </Stack>
 
-              <Stack spacing={2}>
-                <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} w="100%">
+              <Stack spacing={2} align={{ base: 'center', sm: 'stretch' }}>
+                <Stack
+                  direction={{ base: 'column', sm: 'row' }}
+                  spacing={3}
+                  w="100%"
+                  maxW={{ base: '420px', sm: 'none' }}
+                  align={{ base: 'stretch', sm: 'stretch' }}
+                >
                   <Button
                     onClick={openWhatsApp}
-                    flex={1}
-                    h="56px"
+                    flex={{ base: 'none', sm: 1 }}
+                    w="100%"
+                    h={{ base: '48px', md: '56px' }}
                     bg="warm.black"
                     color="accent.gold"
                     border="1px solid"
                     borderColor="accent.gold"
-                    fontSize="13px"
-                    letterSpacing="0.12em"
-                    textTransform="uppercase"
+                    borderRadius="full"
+                    fontSize={{ base: '15px', md: '14px' }}
+                    fontWeight={600}
+                    letterSpacing="0"
+                    textTransform="none"
                     _hover={{
                       bg: 'accent.gold',
                       color: 'warm.black',
@@ -363,26 +372,28 @@ export default function ProductPage() {
                     }}
                     isDisabled={!product.is_available}
                     leftIcon={<WhatsAppGlyph />}
+                    iconSpacing={2}
                   >
                     {product.is_available ? t('product.orderViaWhatsapp') : t('product.unavailable')}
                   </Button>
                   <Button
                     onClick={openKeeta}
-                    flex={1}
-                    h="56px"
+                    flex={{ base: 'none', sm: 1 }}
+                    w="100%"
+                    h={{ base: '48px', md: '56px' }}
                     variant="goldOutline"
-                    fontSize="13px"
-                    letterSpacing="0.12em"
-                    textTransform="uppercase"
+                    borderRadius="full"
+                    fontSize={{ base: '15px', md: '14px' }}
+                    fontWeight={600}
+                    letterSpacing="0"
+                    textTransform="none"
                     isDisabled={!product.is_available}
                     leftIcon={<ExternalLink size={16} />}
+                    iconSpacing={2}
                   >
                     {t('product.orderViaKeeta')}
                   </Button>
                 </Stack>
-                <Text fontSize="11px" color="text.muted" letterSpacing="0.04em">
-                  {t('product.whatsappNotice')}
-                </Text>
                 <Text
                   fontSize="13px"
                   color="text.muted"
