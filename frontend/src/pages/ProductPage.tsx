@@ -314,33 +314,35 @@ export default function ProductPage() {
                 </Text>
               </Box>
 
-              <Stack spacing={3}>
-                <Text
-                  fontSize="11px"
-                  letterSpacing="0.24em"
-                  textTransform="uppercase"
-                  color="text.muted"
-                >
-                  {t('product.measurement')}
-                </Text>
-                <Box
-                  display="inline-flex"
-                  alignItems="center"
-                  gap={3}
-                  alignSelf="flex-start"
-                  px={5}
-                  py={3}
-                  borderRadius="full"
-                  bg="warm.black"
-                  color="accent.gold"
-                  border="1px solid"
-                  borderColor="accent.gold"
-                >
-                  <Text fontSize="13px" fontWeight={600}>
-                    {measurementLabel}
+              {measurementLabel && (
+                <Stack spacing={3}>
+                  <Text
+                    fontSize="11px"
+                    letterSpacing="0.24em"
+                    textTransform="uppercase"
+                    color="text.muted"
+                  >
+                    {t('product.measurement')}
                   </Text>
-                </Box>
-              </Stack>
+                  <Box
+                    display="inline-flex"
+                    alignItems="center"
+                    gap={3}
+                    alignSelf="flex-start"
+                    px={5}
+                    py={3}
+                    borderRadius="full"
+                    bg="warm.black"
+                    color="accent.gold"
+                    border="1px solid"
+                    borderColor="accent.gold"
+                  >
+                    <Text fontSize="13px" fontWeight={600}>
+                      {measurementLabel}
+                    </Text>
+                  </Box>
+                </Stack>
+              )}
 
               <Stack spacing={2} align={{ base: 'center', sm: 'stretch' }}>
                 <Stack

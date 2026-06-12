@@ -50,14 +50,11 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         weight_label = attrs.get('weight_label', getattr(self.instance, 'weight_label', ''))
 
         if size_mode == 'WEIGHT':
-            if not str(weight_label or '').strip():
-                raise serializers.ValidationError({'weight_label': 'Weight label is required.'})
             attrs['size'] = None
             attrs['weight_label'] = str(weight_label).strip()
         else:
-            if not size:
-                raise serializers.ValidationError({'size': 'Size is required.'})
             attrs['size_mode'] = 'SIZE'
+            attrs['size'] = size or None
             attrs['weight_label'] = ''
 
         if self.instance is None:

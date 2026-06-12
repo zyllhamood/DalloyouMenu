@@ -11,5 +11,6 @@ export function getMeasurementLabel(
   t: (key: string) => string,
 ): string {
   if (product.size_mode === 'WEIGHT') return product.weight_label || '';
+  if (!product.size) return '';
   return t(`sizes.${sizeToKey(product.size)}`);
 }

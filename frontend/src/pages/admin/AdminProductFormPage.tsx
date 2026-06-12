@@ -38,7 +38,7 @@ const schema = z.object({
   categoryId: z.number().int().positive(),
   nameAr: z.string().min(1, 'Required').max(200, 'Max 200 characters'),
   descriptionAr: z.string().max(2000).optional().default(''),
-  sizeMode: z.enum(['SIZE', 'WEIGHT']),
+  sizeMode: z.enum(['NONE', 'SIZE', 'WEIGHT']),
   size: z.enum(['SMALL', 'MEDIUM', 'LARGE']).nullable().optional(),
   weightLabel: z.string().max(80, 'Max 80 characters').optional().default(''),
   basePrice: z.number().nonnegative('Must be >= 0'),
@@ -46,13 +46,6 @@ const schema = z.object({
   isNew: z.boolean().default(false),
   isAvailable: z.boolean().default(true),
   order: z.number().int().nonnegative().default(0),
-}).superRefine((values, ctx) => {
-  if (values.sizeMode === 'SIZE' && !values.size) {
-    ctx.addIssue({ code: 'custom', path: ['size'], message: 'Required' });
-  }
-  if (values.sizeMode === 'WEIGHT' && !values.weightLabel?.trim()) {
-    ctx.addIssue({ code: 'custom', path: ['weightLabel'], message: 'Required' });
-  }
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -61,8 +54,8 @@ const defaultValues: FormValues = {
   categoryId: 0,
   nameAr: '',
   descriptionAr: '',
-  sizeMode: 'SIZE',
-  size: 'LARGE',
+  sizeMode: 'NONE',
+  size: null,
   weightLabel: '',
   basePrice: 0,
   isFeatured: false,
@@ -108,12 +101,17 @@ export default function AdminProductFormPage() {
   useEffect(() => {
     if (!existing.data) return;
     const p = existing.data;
+    const measurementMode = p.size_mode === 'WEIGHT' && p.weight_label
+      ? 'WEIGHT'
+      : p.size
+        ? 'SIZE'
+        : 'NONE';
     reset({
       categoryId: p.category.id,
       nameAr: p.name_ar,
       descriptionAr: p.description_ar ?? '',
-      sizeMode: p.size_mode ?? 'SIZE',
-      size: p.size ?? 'LARGE',
+      sizeMode: measurementMode,
+      size: p.size ?? null,
       weightLabel: p.weight_label ?? '',
       basePrice: Number(p.base_price),
       isFeatured: p.is_featured,
@@ -132,8 +130,8 @@ export default function AdminProductFormPage() {
     fd.append('name_ar', values.nameAr);
     fd.append('description_en', values.descriptionAr ?? '');
     fd.append('description_ar', values.descriptionAr ?? '');
-    fd.append('size_mode', values.sizeMode);
-    fd.append('size', values.sizeMode === 'SIZE' ? String(values.size ?? 'LARGE') : '');
+    fd.append('size_mode', values.sizeMode === 'WEIGHT' ? 'WEIGHT' : 'SIZE');
+    fd.append('size', values.sizeMode === 'SIZE' && values.size ? values.size : '');
     fd.append('weight_label', values.sizeMode === 'WEIGHT' ? values.weightLabel.trim() : '');
     fd.append('base_price', String(values.basePrice));
     fd.append('is_featured', values.isFeatured ? 'true' : 'false');
@@ -276,7 +274,7 @@ export default function AdminProductFormPage() {
                   name="sizeMode"
                   control={control}
                   render={({ field }) => (
-                    <FormControl isInvalid={!!errors.sizeMode} isRequired>
+                    <FormControl isInvalid={!!errors.sizeMode}>
                       <FormLabel fontSize="13px" fontWeight={500}>{t('form.measurementType')}</FormLabel>
                       <Select
                         size="sm"
@@ -285,6 +283,7 @@ export default function AdminProductFormPage() {
                         onChange={(e) => field.onChange(e.target.value)}
                         _focus={{ borderColor: 'accent.gold', boxShadow: '0 0 0 1px rgba(201,169,97,0.4)' }}
                       >
+                        <option value="NONE">{t('form.measurementNone')}</option>
                         <option value="SIZE">{t('form.measurementSize')}</option>
                         <option value="WEIGHT">{t('form.measurementWeight')}</option>
                       </Select>
@@ -293,11 +292,26 @@ export default function AdminProductFormPage() {
                     </FormControl>
                   )}
                 />
-                {sizeMode === 'WEIGHT' ? (
+                {sizeMode === 'NONE' ? (
+                  <Box
+                    border="1px dashed"
+                    borderColor="border.subtle"
+                    borderRadius="sm"
+                    px={4}
+                    py={3}
+                    bg="bg.canvas"
+                  >
+                    <Text fontSize="13px" color="text.primary" fontWeight={500}>
+                      {t('form.measurementNone')}
+                    </Text>
+                    <Text fontSize="11px" color="text.muted" mt={1.5}>
+                      {t('form.measurementNoneHelper')}
+                    </Text>
+                  </Box>
+                ) : sizeMode === 'WEIGHT' ? (
                   <TextField
                     label={t('form.weightLabel')}
                     helper={t('form.weightLabelHelper')}
-                    isRequired
                     error={errors.weightLabel?.message}
                     {...register('weightLabel')}
                     dir="rtl"
@@ -307,15 +321,16 @@ export default function AdminProductFormPage() {
                     name="size"
                     control={control}
                     render={({ field }) => (
-                      <FormControl isInvalid={!!errors.size} isRequired>
+                      <FormControl isInvalid={!!errors.size}>
                         <FormLabel fontSize="13px" fontWeight={500}>{t('form.productSize')}</FormLabel>
                         <Select
                           size="sm"
                           borderRadius="sm"
-                          value={field.value ?? 'LARGE'}
-                          onChange={(e) => field.onChange(e.target.value as VariantSize)}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value ? e.target.value as VariantSize : null)}
                           _focus={{ borderColor: 'accent.gold', boxShadow: '0 0 0 1px rgba(201,169,97,0.4)' }}
                         >
+                          <option value="">{t('form.measurementNone')}</option>
                           {SIZE_OPTIONS.map((size) => (
                             <option key={size} value={size}>
                               {tc(`sizes.${sizeToKey(size)}`)}

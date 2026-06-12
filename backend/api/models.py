@@ -55,7 +55,7 @@ class Product(models.Model):
 
     def __str__(self):
         measurement = self.weight_label if self.size_mode == 'WEIGHT' else self.size
-        return f"{self.name_en} - {measurement}"
+        return f"{self.name_en} - {measurement}" if measurement else self.name_en
 
 
 class Visit(models.Model):

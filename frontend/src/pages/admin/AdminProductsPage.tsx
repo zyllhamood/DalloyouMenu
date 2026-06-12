@@ -62,7 +62,8 @@ type StatusFilter = '' | 'available' | 'unavailable' | 'featured' | 'new';
 
 function adminMeasurementLabel(t: TFn, product: Product) {
   if (product.size_mode === 'WEIGHT') return product.weight_label || '—';
-  const size = product.size ?? 'LARGE';
+  if (!product.size) return '—';
+  const size = product.size;
   const key = size === 'SMALL' ? 'Small' : size === 'MEDIUM' ? 'Medium' : 'Large';
   return t(`form.size${key}`);
 }
