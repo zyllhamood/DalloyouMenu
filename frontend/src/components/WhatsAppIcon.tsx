@@ -1,8 +1,8 @@
 import { Box, Link as ChakraLink, Icon } from '@chakra-ui/react';
 
-const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER ?? '966532370777';
+import { WHATSAPP_ORDER_URL } from '../config/links';
 
-function WhatsAppGlyph(props: { size?: number }) {
+export function WhatsAppGlyph(props: { size?: number }) {
   return (
     <Icon viewBox="0 0 24 24" boxSize={`${props.size ?? 18}px`} aria-hidden>
       <path
@@ -14,10 +14,9 @@ function WhatsAppGlyph(props: { size?: number }) {
 }
 
 export function WhatsAppIcon({ size = 18 }: { size?: number }) {
-  const href = `https://wa.me/${WHATSAPP_NUMBER}`;
   return (
     <ChakraLink
-      href={href}
+      href={WHATSAPP_ORDER_URL}
       isExternal
       aria-label="WhatsApp"
       display="inline-flex"

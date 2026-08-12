@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import {
   Box,
   Container,
@@ -8,31 +8,58 @@ import {
   IconButton,
   VStack,
 } from '@chakra-ui/react';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import Logo from './Logo';
+import BrandLogo from './BrandLogo';
 import WhatsAppIcon from './WhatsAppIcon';
+import { InstagramGlyph, SnapchatGlyph, TikTokGlyph } from './icons/SocialIcons';
+import { INSTAGRAM_URL, SNAPCHAT_URL, TIKTOK_URL } from '../config/links';
 import { useAuthStore } from '../stores/authStore';
+
+// NAVBAR_LOGO_HEIGHT — adjust these two values to resize the brand logo
+// across the whole site. Height only; width scales automatically.
+const NAVBAR_LOGO_HEIGHT_DESKTOP = '40px';
+const NAVBAR_LOGO_HEIGHT_MOBILE = '34px';
+
+/** Homepage anchor target for the branches section. */
+const BRANCHES_HASH = '#branches';
+const BRANCHES_TO = `/${BRANCHES_HASH}`;
 
 const PUBLIC_NAV_LINKS = [
   { to: '/', key: 'nav.home' },
   { to: '/menu', key: 'nav.menu' },
+  { to: BRANCHES_TO, key: 'nav.branches', anchor: true },
 ] as const;
 
-function NavLink({ to, label, active }: { to: string; label: string; active: boolean }) {
+function NavLink({
+  to,
+  label,
+  active,
+  onClick,
+}: {
+  to: string;
+  label: string;
+  active: boolean;
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+}) {
   return (
     <ChakraLink
       as={RouterLink}
       to={to}
+      /* The row is pinned LTR; dir="auto" lets each label resolve its own
+         direction from its first strong character, so Arabic still shapes RTL. */
+      dir="auto"
       position="relative"
       fontSize="16px"
       letterSpacing="0"
       textTransform="none"
+      whiteSpace="nowrap"
       color={active ? 'accent.goldDeep' : 'text.primary'}
       fontWeight={active ? 500 : 400}
       _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
       transition="color 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+      onClick={onClick}
       sx={{
         '&::after': {
           content: '""',
@@ -64,42 +91,6 @@ function CloseGlyph() {
   return (
     <Box as="svg" viewBox="0 0 24 24" w="20px" h="20px" aria-hidden>
       <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </Box>
-  );
-}
-
-function InstagramGlyph() {
-  return (
-    <Box
-      as="svg"
-      width="18px"
-      height="18px"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </Box>
-  );
-}
-
-function TikTokGlyph() {
-  return (
-    <Box
-      as="svg"
-      width="18px"
-      height="18px"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.55a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.08z" />
     </Box>
   );
 }
@@ -144,11 +135,14 @@ function SocialLinks() {
   return (
     <HStack spacing={2}>
       <WhatsAppIcon />
-      <SocialIconLink href="https://www.instagram.com/dalloyauksa" label="Instagram">
-        <InstagramGlyph />
+      <SocialIconLink href={INSTAGRAM_URL} label="Instagram">
+        <InstagramGlyph size={18} />
       </SocialIconLink>
-      <SocialIconLink href="https://www.tiktok.com/@dalloyauksa" label="TikTok">
-        <TikTokGlyph />
+      <SocialIconLink href={TIKTOK_URL} label="TikTok">
+        <TikTokGlyph size={18} />
+      </SocialIconLink>
+      <SocialIconLink href={SNAPCHAT_URL} label="Snapchat">
+        <SnapchatGlyph size={18} />
       </SocialIconLink>
     </HStack>
   );
@@ -156,7 +150,9 @@ function SocialLinks() {
 
 export function Navbar() {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { pathname, hash } = location;
   const token = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [scrolled, setScrolled] = useState(false);
@@ -166,7 +162,28 @@ export function Navbar() {
     ? [...PUBLIC_NAV_LINKS, { to: '/admin', key: 'nav.dashboard' }]
     : PUBLIC_NAV_LINKS;
 
-  const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
+  const isActive = (to: string) => {
+    if (to === BRANCHES_TO) return pathname === '/' && hash === BRANCHES_HASH;
+    return to === '/' ? pathname === '/' && hash !== BRANCHES_HASH : pathname.startsWith(to);
+  };
+
+  const scrollToBranches = useCallback(() => {
+    document.getElementById('branches')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  /** Smooth-scrolls when already on the homepage; navigates + scrolls otherwise. */
+  const handleBranchesClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    setMobileMenuOpen(false);
+
+    if (pathname === '/') {
+      if (hash !== BRANCHES_HASH) navigate(BRANCHES_TO);
+      window.requestAnimationFrame(scrollToBranches);
+      return;
+    }
+
+    navigate(BRANCHES_TO);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -177,7 +194,13 @@ export function Navbar() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, hash]);
+
+  useEffect(() => {
+    if (pathname !== '/' || hash !== BRANCHES_HASH) return;
+    const frame = window.requestAnimationFrame(scrollToBranches);
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, hash, scrollToBranches]);
 
   return (
     <Box
@@ -193,19 +216,42 @@ export function Navbar() {
       transition="all 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
     >
       <Container maxW="1280px" px={{ base: 6, md: 10 }}>
-        <Flex h={{ base: '72px', md: '88px' }} align="center" justify="space-between" gap={6}>
-          <Logo />
+        {/*
+          * The top bar is direction-pinned to LTR so the brand lockup always
+          * sits at the visual left and the links/socials at the visual right,
+          * in Arabic as well as English. Only this row is pinned — the mobile
+          * dropdown below keeps the document direction so Arabic menu items
+          * still align to the right. Each label carries dir="auto" so its own
+          * text still shapes right-to-left.
+          */}
+        <Flex
+          dir="ltr"
+          h={{ base: '72px', md: '88px' }}
+          align="center"
+          justify="space-between"
+          gap={6}
+        >
+          <BrandLogo
+            height={{ base: NAVBAR_LOGO_HEIGHT_MOBILE, md: NAVBAR_LOGO_HEIGHT_DESKTOP }}
+          />
 
-          <HStack spacing={10} display={{ base: 'none', md: 'flex' }}>
-            {navLinks.map((l) => (
-              <NavLink key={l.to} to={l.to} label={t(l.key)} active={isActive(l.to)} />
-            ))}
-          </HStack>
+          <HStack spacing={{ md: 8, lg: 10 }} align="center">
+            <HStack spacing={{ md: 8, lg: 10 }} display={{ base: 'none', md: 'flex' }}>
+              {navLinks.map((l) => (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  label={t(l.key)}
+                  active={isActive(l.to)}
+                  onClick={'anchor' in l && l.anchor ? handleBranchesClick : undefined}
+                />
+              ))}
+            </HStack>
 
-          <HStack spacing={4} align="center">
             <Box display={{ base: 'none', sm: 'block' }}>
               <SocialLinks />
             </Box>
+
             <IconButton
               display={{ base: 'inline-flex', md: 'none' }}
               aria-label={mobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
@@ -239,6 +285,7 @@ export function Navbar() {
           <VStack as="nav" spacing={0} align="stretch">
             {navLinks.map((l) => {
               const active = isActive(l.to);
+              const isAnchor = 'anchor' in l && l.anchor;
               return (
                 <ChakraLink
                   key={l.to}
@@ -251,7 +298,7 @@ export function Navbar() {
                   fontWeight={active ? 600 : 500}
                   color={active ? 'accent.goldDeep' : 'text.primary'}
                   _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={isAnchor ? handleBranchesClick : () => setMobileMenuOpen(false)}
                 >
                   {t(l.key)}
                 </ChakraLink>

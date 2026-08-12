@@ -7,100 +7,119 @@ import {
   GridItem,
   HStack,
   Link as ChakraLink,
-  SimpleGrid,
   Stack,
   Text,
 } from '@chakra-ui/react';
-import { ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import AppLogo, { type AppKey } from './AppLogo';
 import Logo from './Logo';
+import { WhatsAppGlyph } from './WhatsAppIcon';
+import { InstagramGlyph, SnapchatGlyph, TikTokGlyph } from './icons/SocialIcons';
+import {
+  BRANCH_DAMMAM_MAPS_URL,
+  BRANCH_KHOBAR_MAPS_URL,
+  HUNGERSTATION_URL,
+  INSTAGRAM_URL,
+  KEETA_URL,
+  SNAPCHAT_URL,
+  THECHEFZ_URL,
+  TIKTOK_URL,
+  WHATSAPP_ORDER_URL,
+} from '../config/links';
 
-const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER ?? '966532370777';
-const KEETA_ORDER_URL = 'https://url.mykeeta.com/oI6Yp71z';
+const EASE = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
-const BRANCH_1_MAPS = 'https://maps.google.com?q=%D8%AF%D8%A7%D9%84%D9%8A%D9%88+%D8%A7%D9%84%D8%AE%D8%A8%D8%B1';
-const BRANCH_2_MAPS = 'https://maps.app.goo.gl/GbjJkWRAbfvi9tTp6';
-
-function TikTokIcon() {
-  return (
-    <Box
-      as="svg"
-      width="20px"
-      height="20px"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.55a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.08z" />
-    </Box>
-  );
-}
-
-function WhatsAppGlyph() {
-  return (
-    <Box as="svg" viewBox="0 0 24 24" w="16px" h="16px" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M19.11 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91a9.86 9.86 0 0 0 1.32 4.94L2 22l5.29-1.39a9.91 9.91 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91a9.85 9.85 0 0 0-2.85-6.99z"
-      />
-    </Box>
-  );
-}
-
-interface BranchCardProps {
+/** Condensed branch line — the full treatment now lives in the homepage
+ *  branches section, so the footer only needs city · district + a map link. */
+function BranchLine({
+  city,
+  district,
+  mapsUrl,
+}: {
   city: string;
-  area: string;
+  district: string;
   mapsUrl: string;
-  openInMaps: string;
-}
-
-function BranchCard({ city, area, mapsUrl, openInMaps }: BranchCardProps) {
+}) {
   return (
-    <Stack spacing={3}>
-      {/* Thin gold rule */}
-      <Box h="1px" w="28px" bg="accent.gold" opacity={0.7} />
+    <ChakraLink
+      href={mapsUrl}
+      isExternal
+      display="block"
+      transition={`color 300ms ${EASE}`}
+      _hover={{ textDecoration: 'none', '& .dy-branch-city': { color: 'accent.goldDeep' } }}
+    >
       <Text
+        className="dy-branch-city"
         fontFamily="heading"
-        fontSize={{ base: '20px', md: '22px' }}
+        fontSize="18px"
         fontWeight={500}
         color="text.primary"
-        lineHeight={1.2}
+        lineHeight={1.3}
+        transition={`color 300ms ${EASE}`}
       >
         {city}
       </Text>
-      <Text fontSize="13px" color="text.muted" letterSpacing="0.04em">
-        {area}
+      <Text fontSize="13px" color="text.muted" mt={0.5}>
+        {district}
       </Text>
-      <ChakraLink
-        href={mapsUrl}
-        isExternal
-        display="inline-flex"
-        alignItems="center"
-        gap={1.5}
-        px={4}
-        py={2}
-        borderRadius="full"
-        border="1px solid"
-        borderColor="border.gold"
-        fontSize="11px"
-        letterSpacing="0.18em"
-        textTransform="uppercase"
-        color="accent.goldDeep"
-        fontWeight={500}
-        alignSelf="flex-start"
-        transition="all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-        _hover={{
-          bg: 'accent.gold',
-          borderColor: 'accent.gold',
-          color: 'warm.black',
-          textDecoration: 'none',
-        }}
-      >
-        {openInMaps}
-        <ExternalLink size={11} />
-      </ChakraLink>
-    </Stack>
+    </ChakraLink>
+  );
+}
+
+function SocialCircle({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <ChakraLink
+      href={href}
+      isExternal
+      aria-label={label}
+      display="inline-flex"
+      alignItems="center"
+      justifyContent="center"
+      w="38px"
+      h="38px"
+      borderRadius="full"
+      border="1px solid"
+      borderColor="border.gold"
+      color="accent.goldDeep"
+      transition={`all 300ms ${EASE}`}
+      _hover={{
+        bg: 'accent.gold',
+        color: 'warm.black',
+        borderColor: 'accent.gold',
+        textDecoration: 'none',
+        transform: 'translateY(-2px)',
+      }}
+    >
+      {children}
+    </ChakraLink>
+  );
+}
+
+function DeliveryLink({ href, label, app }: { href: string; label: string; app: AppKey }) {
+  return (
+    <ChakraLink
+      href={href}
+      isExternal
+      display="inline-flex"
+      alignItems="center"
+      gap={2}
+      fontSize="14px"
+      color="text.muted"
+      transition={`color 300ms ${EASE}`}
+      _hover={{ color: 'accent.goldDeep', textDecoration: 'none' }}
+    >
+      <AppLogo app={app} size={22} />
+      {label}
+    </ChakraLink>
   );
 }
 
@@ -111,7 +130,6 @@ export function Footer() {
   return (
     <Box
       as="footer"
-      mt={{ base: 16, md: 24 }}
       bg="#F2EDDF"
       borderTop="1px solid"
       borderColor="rgba(201,169,97,0.25)"
@@ -119,17 +137,17 @@ export function Footer() {
       <Container
         maxW="1280px"
         px={{ base: 6, md: 10 }}
-        pt={{ base: '48px', md: '64px' }}
+        pt={{ base: '40px', md: '56px' }}
         pb={{ base: '32px', md: '40px' }}
       >
         <Grid
-          templateColumns={{ base: '1fr', md: '1fr 1.6fr' }}
-          gap={{ base: 12, md: 20 }}
+          templateColumns={{ base: '1fr', md: '1.2fr 1fr' }}
+          gap={{ base: 10, md: 16 }}
           alignItems="start"
         >
           {/* ── Brand column ── */}
           <GridItem>
-            <Stack spacing={5}>
+            <Stack spacing={5} align={{ base: 'center', md: 'flex-start' }}>
               <Logo />
               <Text
                 fontStyle="italic"
@@ -137,161 +155,113 @@ export function Footer() {
                 fontFamily="heading"
                 fontSize="17px"
                 lineHeight={1.7}
-                maxW="300px"
+                maxW="320px"
+                textAlign={{ base: 'center', md: 'start' }}
               >
                 {t('hero.tagline')}
               </Text>
 
-              <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} align="flex-start">
-                {/* WhatsApp CTA */}
-                <Button
-                  as={ChakraLink}
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  isExternal
-                  variant="outline"
-                  size="sm"
-                  h="40px"
-                  px={5}
-                  borderRadius="full"
-                  leftIcon={<WhatsAppGlyph />}
-                  borderColor="border.gold"
-                  color="accent.goldDeep"
-                  fontSize="11px"
-                  letterSpacing="0.14em"
-                  textTransform="uppercase"
-                  transition="all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-                  _hover={{
-                    bg: 'accent.gold',
-                    borderColor: 'accent.gold',
-                    color: 'warm.black',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {t('footer.whatsappCta')}
-                </Button>
-                <Button
-                  as={ChakraLink}
-                  href={KEETA_ORDER_URL}
-                  isExternal
-                  variant="outline"
-                  size="sm"
-                  h="40px"
-                  px={5}
-                  borderRadius="full"
-                  leftIcon={<ExternalLink size={14} />}
-                  borderColor="border.gold"
-                  color="accent.goldDeep"
-                  fontSize="11px"
-                  letterSpacing="0.14em"
-                  textTransform="uppercase"
-                  transition="all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-                  _hover={{
-                    bg: 'accent.gold',
-                    borderColor: 'accent.gold',
-                    color: 'warm.black',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {t('footer.keetaCta')}
-                </Button>
-              </Stack>
+              <Button
+                as={ChakraLink}
+                href={WHATSAPP_ORDER_URL}
+                isExternal
+                variant="outline"
+                size="sm"
+                h="40px"
+                px={5}
+                borderRadius="full"
+                leftIcon={<WhatsAppGlyph size={16} />}
+                borderColor="border.gold"
+                color="accent.goldDeep"
+                fontSize="11px"
+                letterSpacing="0.14em"
+                textTransform="uppercase"
+                transition={`all 300ms ${EASE}`}
+                _hover={{
+                  bg: 'accent.gold',
+                  borderColor: 'accent.gold',
+                  color: 'warm.black',
+                  textDecoration: 'none',
+                }}
+              >
+                {t('footer.whatsappCta')}
+              </Button>
 
-              {/* Social icon buttons */}
-              <Flex mt={4} justify={{ base: 'center', md: 'flex-start' }}>
-                <HStack spacing={1}>
-                  <Box
-                    as="a"
-                    href="https://www.instagram.com/dalloyauksa"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram"
-                    w="36px"
-                    h="36px"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    borderRadius="full"
-                    color="text.primary"
-                    transition="all 200ms ease-out"
-                    _hover={{ color: 'accent.gold', transform: 'scale(1.05)' }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                    </svg>
-                  </Box>
-                  <Box
-                    as="a"
-                    href="https://www.tiktok.com/@dalloyauksa"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="TikTok"
-                    w="36px"
-                    h="36px"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    borderRadius="full"
-                    color="text.primary"
-                    transition="all 200ms ease-out"
-                    _hover={{ color: 'accent.gold', transform: 'scale(1.05)' }}
-                  >
-                    <TikTokIcon />
-                  </Box>
-                </HStack>
-              </Flex>
+              <HStack spacing={2} pt={1}>
+                <SocialCircle href={INSTAGRAM_URL} label="Instagram">
+                  <InstagramGlyph size={18} />
+                </SocialCircle>
+                <SocialCircle href={TIKTOK_URL} label="TikTok">
+                  <TikTokGlyph size={18} />
+                </SocialCircle>
+                <SocialCircle href={SNAPCHAT_URL} label="Snapchat">
+                  <SnapchatGlyph size={18} />
+                </SocialCircle>
+              </HStack>
             </Stack>
           </GridItem>
 
-          {/* ── Branches column ── */}
+          {/* ── Branches (condensed) ── */}
           <GridItem>
-            <Stack spacing={8}>
+            <Stack spacing={5} align={{ base: 'center', md: 'flex-start' }}>
               <Text
                 fontSize="11px"
-                letterSpacing="0.32em"
+                letterSpacing="0.28em"
                 textTransform="uppercase"
                 color="accent.goldDeep"
                 fontWeight={500}
               >
                 {t('footer.branches')}
               </Text>
-              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 8, md: 10 }}>
-                <BranchCard
+              <Stack
+                spacing={4}
+                align={{ base: 'center', md: 'flex-start' }}
+                textAlign={{ base: 'center', md: 'start' }}
+              >
+                <BranchLine
                   city={t('footer.branch1.city')}
-                  area={t('footer.branch1.area')}
-                  mapsUrl={BRANCH_1_MAPS}
-                  openInMaps={t('footer.openInMaps')}
+                  district={t('footer.branch1.area')}
+                  mapsUrl={BRANCH_KHOBAR_MAPS_URL}
                 />
-                <BranchCard
+                <BranchLine
                   city={t('footer.branch2.city')}
-                  area={t('footer.branch2.area')}
-                  mapsUrl={BRANCH_2_MAPS}
-                  openInMaps={t('footer.openInMaps')}
+                  district={t('footer.branch2.area')}
+                  mapsUrl={BRANCH_DAMMAM_MAPS_URL}
                 />
-              </SimpleGrid>
+              </Stack>
             </Stack>
           </GridItem>
         </Grid>
 
-        {/* ── Bottom bar ── */}
+        {/* ── Delivery apps ── */}
         <Flex
-          mt={{ base: 10, md: 14 }}
+          mt={{ base: 9, md: 12 }}
           pt={5}
           borderTop="1px solid"
           borderColor="rgba(201,169,97,0.2)"
           direction={{ base: 'column', md: 'row' }}
-          align={{ base: 'flex-start', md: 'center' }}
+          align={{ base: 'center', md: 'center' }}
+          justify="space-between"
+          gap={3}
+        >
+          <Text fontSize="12px" color="accent.goldDeep" fontWeight={500}>
+            {t('footer.orderOnline')}
+          </Text>
+          <Flex align="center" gap={{ base: 3, sm: 5 }} flexWrap="wrap" justify="center">
+            <DeliveryLink href={HUNGERSTATION_URL} label={t('footer.hungerstation')} app="hungerstation" />
+            <DeliveryLink href={THECHEFZ_URL} label={t('footer.thechefz')} app="thechefz" />
+            <DeliveryLink href={KEETA_URL} label={t('footer.keeta')} app="keeta" />
+          </Flex>
+        </Flex>
+
+        {/* ── Bottom bar ── */}
+        <Flex
+          mt={5}
+          pt={5}
+          borderTop="1px solid"
+          borderColor="rgba(201,169,97,0.2)"
+          direction={{ base: 'column', md: 'row' }}
+          align="center"
           justify="space-between"
           gap={2}
         >

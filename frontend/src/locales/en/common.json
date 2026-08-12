@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "menu": "Menu",
+    "branches": "Branches",
     "dashboard": "Dashboard",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
@@ -11,13 +12,26 @@
     "cta": "Discover the Menu",
     "eyebrow": "Featured",
     "prev": "Previous slide",
-    "next": "Next slide"
+    "next": "Next slide",
+    "statement": "A patisserie in the Eastern Province where French craft meets Saudi hospitality. Every piece is made by hand, fresh each day.",
+    "orderNow": "Order Now",
+    "order": {
+      "whatsapp": "WhatsApp",
+      "hungerstation": "HungerStation",
+      "thechefz": "The Chefz",
+      "keeta": "Keeta"
+    }
   },
   "sections": {
     "featured": "Featured Creations",
     "new": "New Arrivals",
     "categories": "Our Categories",
-    "story": "Our Story"
+    "branches": "Visit Us",
+    "story": "Our Story",
+    "orderApps": "Order via Delivery Apps"
+  },
+  "branches": {
+    "subtitle": "Two doors in the Eastern Province. Come in for the counter, or find us on the map."
   },
   "product": {
     "orderNow": "Order Now",
@@ -35,7 +49,8 @@
     "zoomClose": "Close",
     "zoomHint": "Tap to zoom",
     "size": "Size",
-    "measurement": "Size or weight"
+    "measurement": "Size or weight",
+    "deliveryAppsNote": "Delivery apps open our full menu — only WhatsApp carries this item's details."
   },
   "sizes": {
     "small": "Small",
@@ -78,6 +93,10 @@
   "footer": {
     "whatsappCta": "Message us on WhatsApp",
     "keetaCta": "Order via Keeta",
+    "orderOnline": "Order Online",
+    "hungerstation": "HungerStation",
+    "thechefz": "The Chefz",
+    "keeta": "Keeta",
     "branches": "Our Branches",
     "openInMaps": "Open in Maps",
     "copyright": "All rights reserved.",
@@ -101,5 +120,8 @@
     "menuTitle": "Our Menu — Dalloyou",
     "menuDesc": "Explore the full Dalloyou menu — cakes, tarts, pastries, and chocolates.",
     "productDescFallback": "A Dalloyou creation."
+  },
+  "orderApps": {
+    "subtitle": "Message us directly on WhatsApp, or order through your favourite delivery app."
   }
 }

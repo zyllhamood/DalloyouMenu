@@ -12,9 +12,11 @@ import {
   GridItem,
   Heading,
   Portal,
+  SimpleGrid,
   Skeleton,
   Stack,
   Text,
+  useBreakpointValue,
   useDisclosure,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
@@ -22,23 +24,78 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { ExternalLink, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
+import AppLogo, { type AppKey } from '../components/AppLogo';
 import { productDetail } from '../lib/api';
 import { formatPrice } from '../lib/format';
 import { getMeasurementLabel } from '../lib/productMeasurement';
+import {
+  createWhatsAppUrl,
+  HUNGERSTATION_URL,
+  KEETA_URL,
+  THECHEFZ_URL,
+} from '../config/links';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
-const KEETA_ORDER_URL = 'https://url.mykeeta.com/oI6Yp71z';
 
-function WhatsAppGlyph() {
+// ── Order button ────────────────────────────────────────────────────────────
+// One shape for all four channels: the app's own logo + its name. WhatsApp is
+// the primary (solid) action because it is the only one that can carry this
+// specific product; the delivery apps are gold-outlined siblings.
+
+interface OrderButtonProps {
+  label: string;
+  app: AppKey;
+  /** External store link. Omit and pass onClick instead (WhatsApp). */
+  href?: string;
+  onClick?: () => void;
+  isDisabled?: boolean;
+  primary?: boolean;
+}
+
+function OrderButton({ label, app, href, onClick, isDisabled, primary }: OrderButtonProps) {
+  const iconSize = useBreakpointValue({ base: 26, md: 30 }, { fallback: 'base' }) ?? 26;
+  const linkProps = href
+    ? { as: 'a' as const, href, target: '_blank', rel: 'noopener noreferrer' }
+    : { onClick };
+
   return (
-    <Box as="svg" viewBox="0 0 24 24" w="18px" h="18px" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M19.11 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91a9.86 9.86 0 0 0 1.32 4.94L2 22l5.29-1.39a9.91 9.91 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91a9.85 9.85 0 0 0-2.85-6.99zm-3.55 9.24c-.25-.13-1.46-.72-1.69-.8-.23-.08-.39-.13-.56.13-.17.25-.64.8-.78.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.39.11-.51.11-.11.25-.29.38-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.86.84-.86 2.05 0 1.21.88 2.38 1 2.55.13.17 1.73 2.65 4.2 3.71.59.25 1.05.4 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.46-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.18-.48-.31z"
-      />
-    </Box>
+    <Button
+      {...linkProps}
+      w="100%"
+      minH={{ base: '58px', md: '62px' }}
+      h="auto"
+      py={2}
+      justifyContent="flex-start"
+      px={{ base: 3, md: 4 }}
+      whiteSpace="normal"
+      textAlign="start"
+      borderRadius="lg"
+      borderWidth="1px"
+      borderStyle="solid"
+      borderColor={primary ? 'accent.gold' : 'border.gold'}
+      bg={primary ? 'warm.black' : 'bg.surface'}
+      color={primary ? 'accent.gold' : 'text.primary'}
+      fontSize={{ base: '14px', md: '14px' }}
+      fontWeight={600}
+      letterSpacing="0"
+      textTransform="none"
+      lineHeight={1.3}
+      isDisabled={isDisabled}
+      leftIcon={<AppLogo app={app} size={iconSize} />}
+      iconSpacing={{ base: 2, md: 3 }}
+      _hover={{
+        transform: 'translateY(-2px)',
+        boxShadow: primary ? 'goldGlow' : 'soft',
+        borderColor: 'accent.gold',
+        bg: primary ? 'warm.black' : 'bg.surface',
+        textDecoration: 'none',
+      }}
+      _disabled={{ opacity: 0.45, cursor: 'not-allowed', transform: 'none', boxShadow: 'none' }}
+    >
+      {label}
+    </Button>
   );
 }
 
@@ -133,14 +190,9 @@ export default function ProductPage() {
   const measurementLabel = getMeasurementLabel(product, t);
 
   const openWhatsApp = () => {
-    const number = import.meta.env.VITE_WHATSAPP_NUMBER ?? '966532370777';
     const measurementText = measurementLabel ? ` (${measurementLabel})` : '';
     const message = `السلام عليكم،\nأرغب بطلب: ${productName}${measurementText}\nالسعر: ${price} ر.س`;
-    window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
-  const openKeeta = () => {
-    window.open(KEETA_ORDER_URL, '_blank', 'noopener,noreferrer');
+    window.open(createWhatsAppUrl(message), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -344,58 +396,61 @@ export default function ProductPage() {
                 </Stack>
               )}
 
-              <Stack spacing={2} align={{ base: 'center', sm: 'stretch' }}>
-                <Stack
-                  direction={{ base: 'column', sm: 'row' }}
-                  spacing={3}
-                  w="100%"
-                  maxW={{ base: '420px', sm: 'none' }}
-                  align={{ base: 'stretch', sm: 'stretch' }}
+              {/* ── Ordering channels ─────────────────────────────────────── */}
+              <Stack spacing={2} w="100%" maxW={{ base: '440px', sm: 'none' }} mx={{ base: 'auto', sm: 0 }}>
+                <Text
+                  fontSize="11px"
+                  letterSpacing="0.26em"
+                  textTransform="uppercase"
+                  color="accent.goldDeep"
+                  fontWeight={600}
+                  mb={1}
                 >
-                  <Button
+                  {t('product.orderNow')}
+                </Text>
+
+                {!product.is_available && (
+                  <Text fontSize="14px" fontWeight={600} color="text.primary" mb={2}>
+                    {t('product.unavailable')}
+                  </Text>
+                )}
+
+                {/* 2×2 at every width so all four channels are visible without
+                    scrolling. Labels wrap rather than overflow on narrow phones. */}
+                <SimpleGrid columns={2} spacing={{ base: 2.5, sm: 3 }}>
+                  <OrderButton
+                    label={t('hero.order.whatsapp')}
+                    app="whatsapp"
                     onClick={openWhatsApp}
-                    flex={{ base: 'none', sm: 1 }}
-                    w="100%"
-                    h={{ base: '48px', md: '56px' }}
-                    bg="warm.black"
-                    color="accent.gold"
-                    border="1px solid"
-                    borderColor="accent.gold"
-                    borderRadius="full"
-                    fontSize={{ base: '15px', md: '14px' }}
-                    fontWeight={600}
-                    letterSpacing="0"
-                    textTransform="none"
-                    _hover={{
-                      bg: 'accent.gold',
-                      color: 'warm.black',
-                      transform: 'translateY(-2px)',
-                      boxShadow: 'goldGlow',
-                    }}
                     isDisabled={!product.is_available}
-                    leftIcon={<WhatsAppGlyph />}
-                    iconSpacing={2}
-                  >
-                    {product.is_available ? t('product.orderViaWhatsapp') : t('product.unavailable')}
-                  </Button>
-                  <Button
-                    onClick={openKeeta}
-                    flex={{ base: 'none', sm: 1 }}
-                    w="100%"
-                    h={{ base: '48px', md: '56px' }}
-                    variant="goldOutline"
-                    borderRadius="full"
-                    fontSize={{ base: '15px', md: '14px' }}
-                    fontWeight={600}
-                    letterSpacing="0"
-                    textTransform="none"
+                    primary
+                  />
+                  <OrderButton
+                    label={t('hero.order.hungerstation')}
+                    app="hungerstation"
+                    href={HUNGERSTATION_URL}
                     isDisabled={!product.is_available}
-                    leftIcon={<ExternalLink size={16} />}
-                    iconSpacing={2}
-                  >
-                    {t('product.orderViaKeeta')}
-                  </Button>
-                </Stack>
+                  />
+                  <OrderButton
+                    label={t('hero.order.thechefz')}
+                    app="thechefz"
+                    href={THECHEFZ_URL}
+                    isDisabled={!product.is_available}
+                  />
+                  <OrderButton
+                    label={t('hero.order.keeta')}
+                    app="keeta"
+                    href={KEETA_URL}
+                    isDisabled={!product.is_available}
+                  />
+                </SimpleGrid>
+
+                {/* Only WhatsApp can carry this specific product; the delivery
+                    apps land on the store, so say so rather than surprise. */}
+                <Text fontSize="12px" color="text.muted" lineHeight={1.6} mt={2}>
+                  {t('product.deliveryAppsNote')}
+                </Text>
+
                 <Text
                   fontSize="13px"
                   color="text.muted"
