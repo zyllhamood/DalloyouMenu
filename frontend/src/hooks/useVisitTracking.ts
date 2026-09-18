@@ -30,6 +30,8 @@ export function useVisitTracking() {
   const location = useLocation();
 
   useEffect(() => {
+    // Storefront traffic only (the admin was never tracked).
+    if (location.pathname.startsWith('/admin')) return;
     const path = `${location.pathname}${location.search}`;
     void visitCreate({
       visitor_id: visitorId(),

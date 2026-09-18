@@ -1,106 +1,127 @@
 {
+  "brand": {
+    "name": "Dalloyou",
+    "tagline": "Luxury Patisserie",
+    "statement": "A patisserie in the Eastern Province where French craft meets Saudi hospitality. Every piece is made by hand, fresh each day."
+  },
   "nav": {
     "home": "Home",
     "menu": "Menu",
     "branches": "Branches",
+    "order": "Order now",
+    "orderShort": "Order",
     "dashboard": "Dashboard",
-    "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "primary": "Main navigation",
+    "quick": "Quick navigation"
   },
   "hero": {
-    "tagline": "Crafted with care. Served with grace.",
-    "cta": "Discover the Menu",
-    "eyebrow": "Featured",
-    "prev": "Previous slide",
-    "next": "Next slide",
-    "statement": "A patisserie in the Eastern Province where French craft meets Saudi hospitality. Every piece is made by hand, fresh each day.",
-    "orderNow": "Order Now",
-    "order": {
-      "whatsapp": "WhatsApp",
-      "hungerstation": "HungerStation",
-      "thechefz": "The Chefz",
-      "keeta": "Keeta"
-    }
+    "line1": "Crafted with care,",
+    "line2": "served with grace.",
+    "ctaMenu": "Browse the menu",
+    "ctaOrder": "Order now",
+    "alsoOn": "Also available on",
+    "scroll": "Discover",
+    "showcase": "Dalloyou selections",
+    "prev": "Previous",
+    "next": "Next",
+    "goTo": "View {{name}}"
   },
-  "sections": {
-    "featured": "Featured Creations",
-    "new": "New Arrivals",
-    "categories": "Our Categories",
-    "branches": "Visit Us",
-    "story": "Our Story",
-    "orderApps": "Order via Delivery Apps"
+  "marquee": {
+    "crafted": "Crafted with care",
+    "served": "Served with grace",
+    "fresh": "Fresh every day"
   },
-  "branches": {
-    "subtitle": "Two doors in the Eastern Province. Come in for the counter, or find us on the map."
+  "home": {
+    "categoriesEyebrow": "Our collection",
+    "categoriesTitle": "Categories",
+    "categoriesSubtitle": "Pick a category and find what suits your moment.",
+    "explore": "Explore",
+    "newEyebrow": "What's new",
+    "newTitle": "New arrivals",
+    "viewAll": "Full menu",
+    "storyEyebrow": "Our story",
+    "pillarHand": "Handmade",
+    "pillarHandText": "Every piece is shaped by hand, with care and patience.",
+    "pillarFresh": "Fresh every day",
+    "pillarFreshText": "Prepared daily so it reaches you at its best.",
+    "pillarCraft": "French craft",
+    "pillarCraftText": "French pastry technique with Saudi hospitality.",
+    "worldEyebrow": "The world of Dalloyou",
+    "worldTitle": "Follow what's new",
+    "visitEyebrow": "Visit us",
+    "visitTitle": "Two branches in the Eastern Province",
+    "visitSubtitle": "Drop by, or find us on the map."
+  },
+  "menu": {
+    "eyebrow": "Dalloyou menu",
+    "title": "Menu",
+    "subtitle": "Everything we make with care, in one place.",
+    "searchPlaceholder": "Search by name…",
+    "searchLabel": "Search the menu",
+    "clearSearch": "Clear search",
+    "sizesAll": "All sizes",
+    "sizeFilter": "Size",
+    "viewGrid": "Photo view",
+    "viewList": "List view",
+    "sections": "Menu sections",
+    "items_zero": "No items",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "results_zero": "No results",
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results",
+    "noResults": "Nothing matched your search",
+    "noResultsHint": "Try another word, or clear the search and filters.",
+    "clear": "Clear search & filters",
+    "loadError": "We couldn't load the menu",
+    "loadErrorHint": "Check your connection and try again.",
+    "retry": "Try again"
   },
   "product": {
-    "orderNow": "Order Now",
-    "orderViaWhatsapp": "Order via WhatsApp",
-    "orderViaKeeta": "Order via Keeta",
-    "unavailable": "Currently Unavailable",
-    "whatsappNotice": "You'll be redirected to WhatsApp to complete your order.",
-    "comingSoon": "Online ordering and payment coming soon.",
-    "selectSize": "Choose a size",
-    "searchPlaceholder": "Search the menu",
-    "allCategories": "All",
-    "empty": "No items found.",
-    "emptyHint": "Try adjusting your search or filters.",
     "new": "New",
+    "featured": "Featured",
+    "sizeLabel": "{{size}} size",
+    "orderWhatsapp": "Order on WhatsApp",
+    "orderApps": "Or order through a delivery app",
+    "deliveryAppsNote": "Delivery apps open our full menu — only WhatsApp carries this item's details.",
+    "share": "Share",
+    "linkCopied": "Product link copied",
+    "related": "You may also like",
+    "close": "Close",
+    "backToMenu": "Back to the menu",
+    "photoProduct": "Product photo",
+    "photoMoment": "In the moment",
+    "zoom": "Zoom image",
     "zoomClose": "Close",
-    "zoomHint": "Tap to zoom",
-    "size": "Size",
-    "measurement": "Size or weight",
-    "deliveryAppsNote": "Delivery apps open our full menu — only WhatsApp carries this item's details."
+    "unavailable": "Currently unavailable",
+    "notFound": "This item isn't available right now",
+    "notFoundHint": "It may have sold out or left the menu. Browse our other items.",
+    "openPage": "Product page",
+    "view": "View {{name}}",
+    "currency": "SAR"
   },
   "sizes": {
     "small": "Small",
     "medium": "Medium",
     "large": "Large"
   },
-  "filters": {
-    "sizes": "Sizes",
-    "measurements": "Sizes & weights",
-    "open": "Filters",
-    "clear": "Clear filters"
+  "order": {
+    "title": "Order from Dalloyou",
+    "subtitle": "Message us directly on WhatsApp, or order through your favourite delivery app.",
+    "whatsappTitle": "WhatsApp",
+    "whatsappDesc": "Talk to us directly and we'll arrange your order.",
+    "appsTitle": "Delivery apps",
+    "headline": "Your sweet moment is one message away.",
+    "whatsappCta": "Message us on WhatsApp"
   },
-  "view": {
-    "grid": "Grid view",
-    "list": "List view"
-  },
-  "a11y": {
-    "goToSlide": "Go to slide {{n}}"
-  },
-  "common": {
-    "loading": "Loading…",
-    "error": "Something went wrong.",
-    "errorBody": "We couldn't load this page. Please try again.",
-    "retry": "Try Again"
-  },
-  "notFound": {
-    "title": "Page Not Found",
-    "subtitle": "The page you're looking for doesn't exist or has moved.",
-    "backHome": "Back to Home",
-    "browseMenu": "Browse the Menu"
-  },
-  "brand": {
-    "name": "Dalloyou",
-    "tagline": "Luxury Patisserie",
-    "longTagline": "A house of refined pastry, where French technique meets the warmth of the Levant."
-  },
-  "about": {
-    "short": "Dalloyou is a Riyadh house of pastry built on a single principle: nothing leaves our kitchen that we wouldn't serve our family. Each cake, tart, and chocolate is made by hand in small batches, with French technique applied to ingredients we trust — pistachio from Gaziantep, butter from Normandy, dates from Al-Qassim. The result is patisserie that feels both rooted and quietly modern."
-  },
-  "footer": {
-    "whatsappCta": "Message us on WhatsApp",
-    "keetaCta": "Order via Keeta",
-    "orderOnline": "Order Online",
+  "apps": {
+    "whatsapp": "WhatsApp",
     "hungerstation": "HungerStation",
     "thechefz": "The Chefz",
-    "keeta": "Keeta",
-    "branches": "Our Branches",
-    "openInMaps": "Open in Maps",
-    "copyright": "All rights reserved.",
-    "madeIn": "Made with love in Khobar",
+    "keeta": "Keeta"
+  },
+  "branches": {
+    "directions": "Directions",
     "branch1": {
       "city": "Al Khobar",
       "area": "Al Khuzama District"
@@ -110,18 +131,44 @@
       "area": "Tayba District"
     }
   },
-  "breadcrumb": {
-    "home": "Home",
-    "menu": "Menu"
+  "social": {
+    "instagram": "Instagram",
+    "tiktok": "TikTok",
+    "snapchat": "Snapchat",
+    "follow": "Follow us on {{name}}"
+  },
+  "footer": {
+    "menu": "Menu",
+    "visit": "Visit us",
+    "contact": "Contact",
+    "orderOnline": "Order online",
+    "rights": "© {{year}} Dalloyou. All rights reserved.",
+    "madeIn": "Made with love in Khobar",
+    "backToTop": "Back to top"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "errorBody": "We couldn't load this page. Please try again.",
+    "retry": "Try again"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "subtitle": "The page you're looking for doesn't exist or has moved.",
+    "backHome": "Back to home",
+    "browseMenu": "Browse the menu"
   },
   "page": {
     "homeTitle": "Dalloyou — Luxury Patisserie",
-    "homeDesc": "Hand-crafted cakes, tarts, and chocolates. Made in small batches in Riyadh.",
-    "menuTitle": "Our Menu — Dalloyou",
-    "menuDesc": "Explore the full Dalloyou menu — cakes, tarts, pastries, and chocolates.",
+    "homeDesc": "Dalloyou — a patisserie in the Eastern Province: cakes, chocolates and savouries made by hand and fresh every day.",
+    "menuTitle": "Menu — Dalloyou",
+    "menuDesc": "Browse the full Dalloyou menu with prices, and order on WhatsApp or through delivery apps.",
     "productDescFallback": "A Dalloyou creation."
   },
-  "orderApps": {
-    "subtitle": "Message us directly on WhatsApp, or order through your favourite delivery app."
+  "a11y": {
+    "goToSlide": "Go to slide {{n}}",
+    "skipIntro": "Skip intro",
+    "home": "Dalloyou — home",
+    "skipToContent": "Skip to content"
   }
 }

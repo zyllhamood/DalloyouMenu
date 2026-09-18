@@ -166,6 +166,7 @@ export default function AdminProductFormPage() {
       await queryClient.invalidateQueries({ queryKey: ['admin.products'] });
       await queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
       await queryClient.invalidateQueries({ queryKey: ['productsList'] });
+      await queryClient.invalidateQueries({ queryKey: ['menu'] });
       toast({ title: t('saved'), status: 'success', duration: 3000, position: 'top' });
       navigate('/admin/products');
     } catch {

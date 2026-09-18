@@ -1,22 +1,32 @@
+import logging
+
 from rest_framework import generics, viewsets
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.core.files.storage import default_storage
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.utils import timezone
+from django.views.decorators.http import require_GET
 from datetime import timedelta
 
+from .images import render_thumbnail, snap_width
 from .models import Category, Product, Visit
 from .serializers import (
     CategorySerializer,
+    MenuCategorySerializer,
+    MenuProductSerializer,
     ProductListSerializer,
     ProductDetailSerializer,
     ProductWriteSerializer,
     VisitCreateSerializer,
     VisitListSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 # Public Views
 class CategoryListView(generics.ListAPIView):
@@ -71,6 +81,59 @@ class FeaturedProductsView(generics.ListAPIView):
     queryset = Product.objects.filter(is_available=True, is_featured=True)
     serializer_class = ProductListSerializer
     permission_classes = [AllowAny]
+
+
+class MenuView(APIView):
+    """The whole public catalogue in one unpaginated response.
+
+    The storefront loads this once and serves the homepage, the menu, the
+    quick view and product pages from it, so browsing never waits on the
+    network after the first paint. Only active categories and available
+    products are included, in the admin-defined order.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        categories = (
+            Category.objects.filter(is_active=True)
+            .annotate(product_count=Count('products', filter=Q(products__is_available=True)))
+            .order_by('order', 'id')
+        )
+        products = (
+            Product.objects.filter(is_available=True, category__is_active=True)
+            .select_related('category')
+            .order_by('order', '-created_at')
+        )
+        context = {'request': request}
+        return Response({
+            'categories': MenuCategorySerializer(categories, many=True, context=context).data,
+            'products': MenuProductSerializer(products, many=True, context=context).data,
+        })
+
+
+@require_GET
+def product_image(request, path):
+    """Serve a product image resized to ``?w=`` as cached WebP.
+
+    Only names that belong to a product image are accepted, so this can't be
+    used to proxy arbitrary storage keys. If rendering fails the client is
+    redirected to the original file rather than shown a broken image.
+    """
+    if not Product.objects.filter(Q(display_image=path) | Q(styled_image=path)).exists():
+        raise Http404('Unknown image')
+
+    width = snap_width(request.GET.get('w'))
+    try:
+        file_path = render_thumbnail(path, width)
+    except Exception:
+        logger.exception('Thumbnail rendering failed for %s @%s', path, width)
+        return HttpResponseRedirect(default_storage.url(path))
+
+    response = FileResponse(open(file_path, 'rb'), content_type='image/webp')
+    # Storage names change whenever an image is replaced, so a URL's bytes
+    # never change and can be cached indefinitely.
+    response['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return response
 
 
 class VisitCreateView(APIView):

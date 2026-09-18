@@ -39,7 +39,7 @@ export function Logo({ size = 'md', to = '/' }: LogoProps) {
       {!iconFailed ? (
         <Box
           as="img"
-          src="/icon.png"
+          src="/brand/monogram-256.webp"
           alt=""
           aria-hidden
           onError={() => setIconFailed(true)}

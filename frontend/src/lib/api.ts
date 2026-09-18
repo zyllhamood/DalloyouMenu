@@ -9,6 +9,9 @@ import { getAuthToken, getRefreshToken, useAuthStore } from '../stores/authStore
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api';
 
+/** API root without a trailing slash, e.g. `https://api.example.com/api`. */
+export const API_BASE_URL = baseURL.replace(/\/+$/, '');
+
 export const api: AxiosInstance = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
@@ -108,6 +111,9 @@ export interface Product {
   category: Category;
   display_image: string | null;
   styled_image: string | null;
+  /** Storage names of the images (menu endpoint only) — used for sized thumbnails. */
+  display_image_path?: string | null;
+  styled_image_path?: string | null;
   gallery?: string[];
   size_mode: ProductSizeMode;
   size: VariantSize | null;
@@ -267,6 +273,68 @@ export const productDetail = async (id: number | string): Promise<Product> => {
     starting_price: Number(data.starting_price ?? data.base_price),
   } as Product;
 };
+
+// ─── Storefront menu ──────────────────────────────────────────────────────
+
+export interface MenuCategory {
+  id: number;
+  slug: string;
+  name_en: string;
+  name_ar: string;
+  order?: number;
+  product_count: number;
+}
+
+export interface MenuData {
+  categories: MenuCategory[];
+  /** Available products in active categories, in the admin-defined order. */
+  products: Product[];
+}
+
+/**
+ * The whole public catalogue in one request (`/api/menu/`).
+ *
+ * If the API predates that endpoint (404) the same shape is assembled from
+ * the older list endpoints, so the storefront keeps working during a
+ * staggered deploy — it just loses the sized thumbnails and descriptions.
+ */
+export const fetchMenu = async (): Promise<MenuData> => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await api.get<{ categories: MenuCategory[]; products: any[] }>('/menu/');
+    return {
+      categories: data.categories,
+      products: data.products.map(normaliseListProduct),
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return legacyMenu();
+    }
+    throw error;
+  }
+};
+
+async function legacyMenu(): Promise<MenuData> {
+  const [categories, products] = await Promise.all([
+    categoriesList(),
+    productsList({ allPages: true }),
+  ]);
+  const activeIds = new Set(categories.map((c) => c.id));
+  const visible = products.results.filter((p) => activeIds.has(p.category.id));
+  const counts = new Map<number, number>();
+  visible.forEach((p) => counts.set(p.category.id, (counts.get(p.category.id) ?? 0) + 1));
+  return {
+    categories: categories.map((c) => ({
+      id: c.id,
+      slug: c.slug ?? String(c.id),
+      name_en: c.name_en,
+      name_ar: c.name_ar,
+      order: c.order,
+      product_count: counts.get(c.id) ?? 0,
+    })),
+    products: visible,
+  };
+}
 
 export const featuredProducts = async (): Promise<Product[]> => {
   const { data } = await api.get<any[] | Paginated<any>>('/products/featured/');

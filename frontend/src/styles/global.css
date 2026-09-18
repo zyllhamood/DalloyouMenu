@@ -1,0 +1,203 @@
+/*
+ * Storefront-wide CSS that is awkward to express as Chakra style props:
+ * design variables, masks, keyframes and a few reusable effects.
+ * Everything is prefixed `dy-` so it never collides with Chakra's classes.
+ */
+
+:root {
+  --dy-noir: #0e0b08;
+  --dy-noir-2: #17130f;
+  --dy-noir-3: #221c16;
+  --dy-ivory: #f7f3e9;
+  --dy-ivory-2: #efe8d8;
+  --dy-line: #e4d9c3;
+  --dy-ink: #16120e;
+  --dy-muted: #6f6558;
+  --dy-on-dark: #f4eee3;
+  --dy-on-dark-muted: #a99f91;
+  --dy-gold: #c2863e;
+  --dy-gold-light: #e3b775;
+  --dy-gold-pale: #f1ddb3;
+  --dy-gold-deep: #8f5b1e;
+
+  /* Polished-gold ramp used for text, hairlines and the monogram. */
+  --dy-metal: linear-gradient(100deg, #9a6425 0%, #c2863e 24%, #f0d3a0 50%, #c2863e 74%, #8f5b1e 100%);
+
+  /* Warm backdrop behind photos (seen through transparent cut-outs and while loading). */
+  --dy-stage: radial-gradient(120% 90% at 50% 14%, #f4eee3 0%, #ede4d3 55%, #e3d6bf 100%);
+
+  --dy-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dy-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --dy-nav-h: 64px;
+  --font-display: 'Amiri', 'Times New Roman', serif;
+  --font-body: 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  --font-latin: 'Bodoni Moda', 'Didot', 'Bodoni 72', Georgia, serif;
+}
+
+@media (min-width: 48em) {
+  :root {
+    --dy-nav-h: 80px;
+  }
+}
+
+html {
+  scroll-padding-top: calc(var(--dy-nav-h) + 16px);
+}
+
+body {
+  overflow-x: clip;
+}
+
+:focus-visible {
+  outline: 2px solid var(--dy-gold);
+  outline-offset: 3px;
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────────── */
+
+/* Fine film grain over dark sections — adds tactility without an image. */
+.dy-grain {
+  position: relative;
+  isolation: isolate;
+}
+.dy-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Gold ─────────────────────────────────────────────────────────────── */
+
+.dy-metal-text {
+  background-image: var(--dy-metal);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: dy-sheen 7s var(--dy-ease-in-out) infinite;
+  /*
+   * The gradient only paints inside the element's box; Arabic marks (shadda,
+   * fatha, damma) rise above it and would render invisible. Extend the box
+   * vertically without moving the text.
+   */
+  padding-block: 0.45em 0.35em;
+  margin-block: -0.45em -0.35em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+@keyframes dy-sheen {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* The monogram as a mask, filled with polished gold (and an optional sheen). */
+.dy-mono {
+  display: inline-block;
+  background-image: var(--dy-metal);
+  background-size: 260% 100%;
+  background-position: 0% 50%;
+  -webkit-mask: url('/brand/monogram-256.webp') center / contain no-repeat;
+  mask: url('/brand/monogram-256.webp') center / contain no-repeat;
+}
+.dy-mono--lg {
+  -webkit-mask-image: url('/brand/monogram-1024.webp');
+  mask-image: url('/brand/monogram-1024.webp');
+}
+.dy-mono--sheen {
+  animation: dy-sheen 5s var(--dy-ease-in-out) infinite;
+}
+
+/* ── Utilities ────────────────────────────────────────────────────────── */
+
+.dy-no-scrollbar {
+  scrollbar-width: none;
+}
+.dy-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.dy-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────── */
+
+/* Arabic tickers run left → right so each phrase enters first-word first. */
+@keyframes dy-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(50%, 0, 0);
+  }
+}
+
+@keyframes dy-float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--dy-p-o, 0.6);
+  }
+  85% {
+    opacity: var(--dy-p-o, 0.6);
+  }
+  100% {
+    transform: translate3d(var(--dy-p-x, 12px), -120px, 0) scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes dy-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes dy-cue {
+  0% {
+    transform: translateY(-100%);
+  }
+  60%,
+  100% {
+    transform: translateY(260%);
+  }
+}
+
+@keyframes dy-glow {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dy-metal-text,
+  .dy-mono--sheen {
+    animation: none;
+  }
+}

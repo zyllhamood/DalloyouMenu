@@ -34,6 +34,14 @@ export function formatPrice(
   return isArabic(lang) ? `${rounded} ر.س` : `SAR ${rounded}`;
 }
 
+/** Just the amount ("130", "12.5") — for layouts that set the currency apart. */
+export function formatAmount(value: number | string | null | undefined): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = typeof value === 'string' ? Number(value) : value;
+  if (!Number.isFinite(n)) return null;
+  return String(Number.isInteger(n) ? n : Number(n.toFixed(2)));
+}
+
 /**
  * Price-only legacy helper kept for existing call sites.
  */

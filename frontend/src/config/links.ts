@@ -1,4 +1,6 @@
 export const WHATSAPP_NUMBER = '966532370777';
+/** Local format, as printed on the shop's own posters. */
+export const WHATSAPP_DISPLAY = '053 237 0777';
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 const WHATSAPP_GREETING = 'مرحباً، أرغب في الطلب من داليو. / Hello, I would like to order from Dalloyou.';
@@ -17,4 +19,45 @@ export const BRANCH_DAMMAM_MAPS_URL = 'https://maps.app.goo.gl/GbjJkWRAbfvi9tTp6
 
 export function createWhatsAppUrl(message?: string) {
   return message ? `${WHATSAPP_URL}?text=${encodeURIComponent(message)}` : WHATSAPP_URL;
+}
+
+// ─── Structured lists the storefront renders ─────────────────────────────
+
+export type DeliveryAppKey = 'hungerstation' | 'thechefz' | 'keeta';
+
+export const DELIVERY_APPS: { key: DeliveryAppKey; url: string }[] = [
+  { key: 'hungerstation', url: HUNGERSTATION_URL },
+  { key: 'thechefz', url: THECHEFZ_URL },
+  { key: 'keeta', url: KEETA_URL },
+];
+
+export const BRANCHES = [
+  { key: 'branch1', mapsUrl: BRANCH_KHOBAR_MAPS_URL },
+  { key: 'branch2', mapsUrl: BRANCH_DAMMAM_MAPS_URL },
+] as const;
+
+export type SocialKey = 'instagram' | 'tiktok' | 'snapchat';
+
+export const SOCIALS: { key: SocialKey; url: string; handle: string; label: string }[] = [
+  { key: 'instagram', url: INSTAGRAM_URL, handle: '@dalloyauksa', label: 'Instagram' },
+  { key: 'tiktok', url: TIKTOK_URL, handle: '@dalloyauksa', label: 'TikTok' },
+  { key: 'snapchat', url: SNAPCHAT_URL, handle: 'dalloyou', label: 'Snapchat' },
+];
+
+/** WhatsApp message for a specific product, with a link staff can open. */
+export function productOrderMessage({
+  name,
+  measurement,
+  price,
+  url,
+}: {
+  name: string;
+  measurement?: string;
+  price?: string | null;
+  url?: string;
+}): string {
+  const lines = ['السلام عليكم،', `أرغب بطلب: ${name}${measurement ? ` (${measurement})` : ''}`];
+  if (price) lines.push(`السعر: ${price} ر.س`);
+  if (url) lines.push(url);
+  return lines.join('\n');
 }

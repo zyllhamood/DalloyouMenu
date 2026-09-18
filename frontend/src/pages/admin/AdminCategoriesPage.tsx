@@ -345,6 +345,7 @@ export default function AdminCategoriesPage() {
       categoryCreate({ name_en: payload.nameAr, name_ar: payload.nameAr, slug: payload.slug }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['categoriesList'] });
+      void queryClient.invalidateQueries({ queryKey: ['menu'] });
       toast({ title: t('saved'), status: 'success', duration: 3000, position: 'top' });
       closeAdd();
     },
@@ -356,6 +357,7 @@ export default function AdminCategoriesPage() {
       categoryUpdate(id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['categoriesList'] });
+      void queryClient.invalidateQueries({ queryKey: ['menu'] });
       toast({ title: t('saved'), status: 'success', duration: 3000, position: 'top' });
       handleCloseEdit();
     },
@@ -366,6 +368,7 @@ export default function AdminCategoriesPage() {
     mutationFn: (id: number) => categoryDelete(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['categoriesList'] });
+      void queryClient.invalidateQueries({ queryKey: ['menu'] });
       toast({ title: t('deleteSuccess'), status: 'success', duration: 3000, position: 'top' });
       closeConfirm();
       setDeleteTarget(null);

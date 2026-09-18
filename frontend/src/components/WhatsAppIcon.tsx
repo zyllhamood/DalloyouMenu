@@ -1,6 +1,4 @@
-import { Box, Link as ChakraLink, Icon } from '@chakra-ui/react';
-
-import { WHATSAPP_ORDER_URL } from '../config/links';
+import { Icon } from '@chakra-ui/react';
 
 export function WhatsAppGlyph(props: { size?: number }) {
   return (
@@ -13,34 +11,4 @@ export function WhatsAppGlyph(props: { size?: number }) {
   );
 }
 
-export function WhatsAppIcon({ size = 18 }: { size?: number }) {
-  return (
-    <ChakraLink
-      href={WHATSAPP_ORDER_URL}
-      isExternal
-      aria-label="WhatsApp"
-      display="inline-flex"
-      alignItems="center"
-      justifyContent="center"
-      w="36px"
-      h="36px"
-      borderRadius="full"
-      border="1px solid"
-      borderColor="border.gold"
-      color="accent.goldDeep"
-      transition="all 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-      _hover={{
-        bg: 'accent.gold',
-        color: 'warm.black',
-        textDecoration: 'none',
-        transform: 'translateY(-2px)',
-      }}
-    >
-      <Box as="span" display="inline-flex">
-        <WhatsAppGlyph size={size} />
-      </Box>
-    </ChakraLink>
-  );
-}
-
-export default WhatsAppIcon;
+export default WhatsAppGlyph;

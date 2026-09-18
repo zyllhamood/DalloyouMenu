@@ -31,6 +31,41 @@ class ProductDetailSerializer(ProductListSerializer):
         )
 
 
+class MenuCategorySerializer(serializers.ModelSerializer):
+    """Public category row for the storefront menu, with its live item count."""
+    product_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ('id', 'slug', 'name_en', 'name_ar', 'order', 'product_count')
+
+
+class MenuProductCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id', 'slug', 'name_en', 'name_ar')
+
+
+class MenuProductSerializer(ProductDetailSerializer):
+    """Everything a menu card, quick view and product page need in one row.
+
+    The ``*_path`` fields are the storage names of the images; the storefront
+    uses them to request sized thumbnails from ``/api/img/<path>``.
+    """
+    category = MenuProductCategorySerializer(read_only=True)
+    display_image_path = serializers.SerializerMethodField()
+    styled_image_path = serializers.SerializerMethodField()
+
+    class Meta(ProductDetailSerializer.Meta):
+        fields = ProductDetailSerializer.Meta.fields + ('display_image_path', 'styled_image_path')
+
+    def get_display_image_path(self, obj):
+        return obj.display_image.name or None
+
+    def get_styled_image_path(self, obj):
+        return obj.styled_image.name or None
+
+
 class ProductWriteSerializer(serializers.ModelSerializer):
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True

@@ -1,7 +1,6 @@
 /**
  * Social glyphs — lucide-react has no Instagram / TikTok / Snapchat marks,
- * so these are inline SVGs kept in one place and shared by the hero, navbar
- * and footer.
+ * so these are inline SVGs kept in one place.
  *
  * House rules for every glyph here:
  *   · 24x24 viewBox, sized by the `size` prop (px)
@@ -12,6 +11,8 @@
  */
 
 import { Box } from '@chakra-ui/react';
+
+import type { SocialKey } from '../../config/links';
 
 interface GlyphProps {
   /** Rendered width/height in px. Default 20. */
@@ -67,4 +68,10 @@ export function SnapchatGlyph({ size = 20 }: GlyphProps) {
       <path d="M12 2.2c2.6 0 4.6 2 4.7 4.6.03.72 0 1.42-.04 2.05.28.12.62.16.98.05.28-.08.6.02.75.28.16.28.08.63-.18.82-.3.22-.78.4-1.2.55-.3.11-.6.21-.66.4-.08.24.1.6.3.95.62 1.1 1.6 2.05 2.83 2.4.28.08.46.35.42.63-.06.42-.55.72-1.5.92-.3.06-.5.1-.6.3-.06.13-.06.3-.1.5-.05.24-.14.45-.45.45-.3 0-.63-.1-1.1-.13-.3-.02-.6-.01-.9.04-.6.1-1.1.5-1.66.9-.66.48-1.4.9-2.44.9s-1.78-.42-2.44-.9c-.56-.4-1.06-.8-1.66-.9a3.6 3.6 0 0 0-.9-.04c-.47.03-.8.13-1.1.13-.31 0-.4-.21-.45-.45-.04-.2-.04-.37-.1-.5-.1-.2-.3-.24-.6-.3-.95-.2-1.44-.5-1.5-.92a.56.56 0 0 1 .42-.63c1.23-.35 2.21-1.3 2.83-2.4.2-.35.38-.71.3-.95-.06-.19-.36-.29-.66-.4-.42-.15-.9-.33-1.2-.55a.6.6 0 0 1-.18-.82c.15-.26.47-.36.75-.28.36.11.7.07.98-.05A25 25 0 0 1 7.3 6.8C7.4 4.2 9.4 2.2 12 2.2z" />
     </Box>
   );
+}
+
+export function SocialGlyph({ network, size = 20 }: GlyphProps & { network: SocialKey }) {
+  if (network === 'instagram') return <InstagramGlyph size={size} />;
+  if (network === 'tiktok') return <TikTokGlyph size={size} />;
+  return <SnapchatGlyph size={size} />;
 }

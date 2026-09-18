@@ -496,6 +496,7 @@ export default function AdminProductsPage() {
             void queryClient.invalidateQueries({ queryKey: ['admin.productsList'] });
             void queryClient.invalidateQueries({ queryKey: ['admin.recentProducts'] });
             void queryClient.invalidateQueries({ queryKey: ['productsList'] });
+            void queryClient.invalidateQueries({ queryKey: ['menu'] });
           });
           orderQueue.current.delete(id);
         }, 250),
@@ -521,6 +522,9 @@ export default function AdminProductsPage() {
       if (ctx?.prev) queryClient.setQueryData(['admin.productsList', { search, category, status, page }], ctx.prev);
       toast({ title: t('saveError'), status: 'error', duration: 3000, position: 'top' });
     },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['menu'] });
+    },
   });
 
   // ─── Delete mutation ────────────────────────────────────────────────────
@@ -531,6 +535,7 @@ export default function AdminProductsPage() {
       void queryClient.invalidateQueries({ queryKey: ['admin.productsList'] });
       void queryClient.invalidateQueries({ queryKey: ['admin.recentProducts'] });
       void queryClient.invalidateQueries({ queryKey: ['admin.allCount'] });
+      void queryClient.invalidateQueries({ queryKey: ['menu'] });
       toast({ title: t('deleteSuccess'), status: 'success', duration: 3000, position: 'top' });
       closeConfirm();
       setDeleteTarget(null);

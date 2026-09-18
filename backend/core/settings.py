@@ -127,6 +127,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Disk cache for the resized WebP product images served at /api/img/ (see
+# api/images.py). Disposable — safe to delete; it refills on demand.
+IMAGE_CACHE_DIR = Path(os.environ.get('IMAGE_CACHE_DIR', BASE_DIR / 'cache' / 'img'))
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
