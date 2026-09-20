@@ -9,6 +9,7 @@ from PIL import Image
 
 from .images import snap_width
 from .models import Category, Product
+from .serializers import ProductWriteSerializer
 
 TEMP_MEDIA = tempfile.mkdtemp(prefix='dalloyou-test-media-')
 TEMP_CACHE = tempfile.mkdtemp(prefix='dalloyou-test-cache-')
@@ -85,6 +86,57 @@ class StorefrontEndpointsTests(TestCase):
     def test_image_endpoint_rejects_unknown_paths(self):
         response = self.client.get(reverse('product-image', args=['products/../../secret.png']))
         self.assertEqual(response.status_code, 404)
+
+    def test_product_needs_only_the_main_photo(self):
+        """One photo is enough to create a product; the second is optional."""
+        serializer = ProductWriteSerializer(data={
+            'name_en': 'one-photo',
+            'name_ar': 'صورة واحدة',
+            'category_id': self.cakes.id,
+            'base_price': '120',
+            'display_image': image_upload('one.png'),
+        })
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        product = serializer.save()
+        self.assertTrue(product.display_image)
+        self.assertFalse(product.styled_image)
+
+    def test_missing_main_photo_is_rejected(self):
+        serializer = ProductWriteSerializer(data={
+            'name_en': 'no-photo',
+            'name_ar': 'بدون صورة',
+            'category_id': self.cakes.id,
+            'base_price': '120',
+        })
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('display_image', serializer.errors)
+
+    def test_sale_price_rules(self):
+        """Empty or zero clears the discount; a price at or above the base is rejected."""
+        for blank in ('', None, '0'):
+            serializer = ProductWriteSerializer(
+                instance=self.visible, data={'discount_price': blank}, partial=True
+            )
+            self.assertTrue(serializer.is_valid(), serializer.errors)
+            self.assertIsNone(serializer.validated_data['discount_price'])
+
+        serializer = ProductWriteSerializer(
+            instance=self.visible, data={'discount_price': '100'}, partial=True
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('discount_price', serializer.errors)
+
+        serializer = ProductWriteSerializer(
+            instance=self.visible, data={'discount_price': '79.50'}, partial=True
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(str(serializer.save().discount_price), '79.50')
+
+    def test_menu_exposes_the_sale_price(self):
+        self.visible.discount_price = 75
+        self.visible.save(update_fields=['discount_price'])
+        data = self.client.get(reverse('menu')).json()
+        self.assertEqual(data['products'][0]['discount_price'], '75.00')
 
     def test_snap_width(self):
         self.assertEqual(snap_width('1'), 160)

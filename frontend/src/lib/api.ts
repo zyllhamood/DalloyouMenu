@@ -12,6 +12,9 @@ const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
 /** API root without a trailing slash, e.g. `https://api.example.com/api`. */
 export const API_BASE_URL = baseURL.replace(/\/+$/, '');
 
+/** Photo uploads travel over slow mobile connections — they get their own budget. */
+export const UPLOAD_TIMEOUT_MS = 180_000;
+
 export const api: AxiosInstance = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
@@ -23,6 +26,9 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   // the multipart boundary. Delete any pre-set application/json default.
   if (config.data instanceof FormData) {
     delete (config.headers as Record<string, string>)['Content-Type'];
+    // The default 15s cut uploads off mid-flight: the server kept the product
+    // but the admin saw an error. Give file uploads room instead.
+    if (!config.timeout || config.timeout === 15000) config.timeout = UPLOAD_TIMEOUT_MS;
   }
   const token = getAuthToken();
   if (token) {
@@ -119,6 +125,8 @@ export interface Product {
   size: VariantSize | null;
   weight_label: string;
   base_price: number;     // normalised to Number at the API boundary (wire sends string)
+  /** Sale price. null/absent means the product is not discounted. */
+  discount_price?: number | null;
   starting_price: number;
   currency?: string;
   is_featured: boolean;
@@ -216,10 +224,17 @@ export const categoriesList = async (): Promise<Category[]> => {
   return Array.isArray(data) ? data : data.results;
 };
 
+function normalisePrice(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function normaliseListProduct(p: any): Product {
   return {
     ...p,
     base_price: Number(p.base_price),
+    discount_price: normalisePrice(p.discount_price),
     starting_price: Number(p.starting_price ?? p.base_price),
   };
 }
@@ -267,11 +282,7 @@ export const productsList = async (params: ProductListParams = {}): Promise<Pagi
 export const productDetail = async (id: number | string): Promise<Product> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await api.get<any>(`/products/${id}/`);
-  return {
-    ...data,
-    base_price: Number(data.base_price),
-    starting_price: Number(data.starting_price ?? data.base_price),
-  } as Product;
+  return normaliseListProduct(data);
 };
 
 // ─── Storefront menu ──────────────────────────────────────────────────────

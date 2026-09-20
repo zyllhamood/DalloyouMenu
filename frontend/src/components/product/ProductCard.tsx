@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import type { Product } from '../../lib/api';
 import { displayName, measurementText } from '../../lib/menu';
+import { discountPercent, effectivePrice, originalPrice } from '../../lib/price';
 import { useModalLinkState } from '../../lib/routing';
-import PhotoFrame, { FrameSheen, NewBadge } from './PhotoFrame';
-import Price from './Price';
+import PhotoFrame, { FrameBadges, FrameSheen, NewBadge } from './PhotoFrame';
+import Price, { DiscountBadge } from './Price';
 import ProductImage from './ProductImage';
 
 interface ProductCardProps {
@@ -66,7 +67,10 @@ export function ProductCard({ product, sizes = CARD_SIZES, eager = false, tone =
           style={{ position: 'absolute', inset: 0 }}
         />
         <FrameSheen className="dy-card-sheen" />
-        {product.is_new && <NewBadge label={t('product.new')} />}
+        <FrameBadges>
+          {product.is_new && <NewBadge label={t('product.new')} />}
+          <DiscountBadge percent={discountPercent(product)} />
+        </FrameBadges>
       </PhotoFrame>
 
       <Box pt={{ base: 3, md: 4 }} px={0.5}>
@@ -87,7 +91,12 @@ export function ProductCard({ product, sizes = CARD_SIZES, eager = false, tone =
           <Text fontSize={{ base: '12px', md: '13px' }} color={tone === 'dark' ? 'text.onDarkMuted' : 'text.muted'} noOfLines={1}>
             {measure}
           </Text>
-          <Price value={product.base_price} size="sm" tone={tone === 'dark' ? 'onDark' : 'gold'} />
+          <Price
+            value={effectivePrice(product)}
+            original={originalPrice(product)}
+            size="sm"
+            tone={tone === 'dark' ? 'onDark' : 'gold'}
+          />
         </Flex>
       </Box>
     </Box>

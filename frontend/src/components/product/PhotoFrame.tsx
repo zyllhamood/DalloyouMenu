@@ -1,4 +1,4 @@
-import { forwardRef, useLayoutEffect, useRef, useState } from 'react';
+import { forwardRef, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Box, type BoxProps, type ResponsiveValue } from '@chakra-ui/react';
 import { motion, useReducedMotion } from 'framer-motion';
 
@@ -70,14 +70,30 @@ export function FrameSheen({ className }: { className?: string }) {
   );
 }
 
-/** "جديد" — pinned to the photo's leading top corner. */
-export function NewBadge({ label }: { label: string }) {
+/** Stacks flags ("جديد", a discount) in the photo's leading top corner. */
+export function FrameBadges({ children }: { children: ReactNode }) {
   return (
     <Box
       position="absolute"
       top={{ base: 2.5, md: 3 }}
       insetInlineStart={{ base: 2.5, md: 3 }}
       zIndex={4}
+      display="flex"
+      flexDirection="column"
+      alignItems="flex-start"
+      gap={1.5}
+      pointerEvents="none"
+    >
+      {children}
+    </Box>
+  );
+}
+
+/** "جديد" */
+export function NewBadge({ label }: { label: string }) {
+  return (
+    <Box
+      as="span"
       px={2.5}
       py="3px"
       borderRadius="full"

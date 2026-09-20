@@ -16,8 +16,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'name_en', 'name_ar', 'category', 'display_image',
-            'styled_image', 'size_mode', 'size', 'weight_label', 'base_price', 'starting_price',
-            'is_new', 'is_featured', 'is_available',
+            'styled_image', 'size_mode', 'size', 'weight_label', 'base_price', 'discount_price',
+            'starting_price', 'is_new', 'is_featured', 'is_available',
         )
 
     def get_starting_price(self, obj):
@@ -70,14 +70,30 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True
     )
+    # The product photo is the only required image; the second one is optional
+    # (the model still marks it required, so it is relaxed here).
+    styled_image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Product
         fields = (
             'id', 'name_en', 'name_ar', 'description_en', 'description_ar',
-            'category_id', 'display_image', 'styled_image', 'size_mode', 'size', 'weight_label', 'base_price',
-            'is_new', 'is_featured', 'is_available', 'order',
+            'category_id', 'display_image', 'styled_image', 'size_mode', 'size', 'weight_label',
+            'base_price', 'discount_price', 'is_new', 'is_featured', 'is_available', 'order',
         )
+
+    # Multipart forms send empty number inputs as "" — read those as "not set"
+    # so clearing the sale price in the admin clears it here too.
+    EMPTY_AS_NULL = ('base_price', 'discount_price')
+
+    def to_internal_value(self, data):
+        if hasattr(data, 'get'):
+            blanks = [f for f in self.EMPTY_AS_NULL if data.get(f, None) in ('', 'null', 'undefined')]
+            if blanks:
+                data = data.copy()
+                for field in blanks:
+                    data[field] = None
+        return super().to_internal_value(data)
 
     def validate(self, attrs):
         size_mode = attrs.get('size_mode', getattr(self.instance, 'size_mode', 'SIZE'))
@@ -92,11 +108,19 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             attrs['size'] = size or None
             attrs['weight_label'] = ''
 
-        if self.instance is None:
-            if not attrs.get('display_image'):
-                raise serializers.ValidationError({'display_image': 'Display image is required.'})
-            if not attrs.get('styled_image'):
-                raise serializers.ValidationError({'styled_image': 'Featured image is required.'})
+        if self.instance is None and not attrs.get('display_image'):
+            raise serializers.ValidationError({'display_image': 'صورة المنتج مطلوبة.'})
+
+        # A blank or non-positive sale price simply means "no discount".
+        if 'discount_price' in attrs:
+            discount = attrs['discount_price']
+            if discount is not None and discount <= 0:
+                attrs['discount_price'] = discount = None
+            base = attrs.get('base_price', getattr(self.instance, 'base_price', None))
+            if discount is not None and base is not None and discount >= base:
+                raise serializers.ValidationError(
+                    {'discount_price': 'السعر بعد الخصم يجب أن يكون أقل من السعر الأساسي.'}
+                )
         return attrs
 
 

@@ -18,6 +18,7 @@ import {
   Text,
   useToast,
 } from '@chakra-ui/react';
+import axios from 'axios';
 import { Controller, useForm } from 'react-hook-form';
 import type { Resolver } from 'react-hook-form';
 import { z } from 'zod';
@@ -30,6 +31,7 @@ import ImageDropZone from '../../components/admin/ImageDropZone';
 import { TextField, TextareaField, NumberField } from '../../components/admin/AdminFormField';
 import { categoriesList, productDetail, productCreate, productUpdate } from '../../lib/api';
 import type { VariantSize } from '../../lib/api';
+import { formatBytes, prepareImageForUpload } from '../../lib/imageUpload';
 import { SIZE_OPTIONS, sizeToKey } from '../../lib/productMeasurement';
 
 const QUERY_OPTS = { staleTime: 60_000, gcTime: 300_000 } as const;
@@ -42,10 +44,15 @@ const schema = z.object({
   size: z.enum(['SMALL', 'MEDIUM', 'LARGE']).nullable().optional(),
   weightLabel: z.string().max(80, 'Max 80 characters').optional().default(''),
   basePrice: z.number().nonnegative('Must be >= 0'),
+  // 0 (or empty) means the product is not discounted.
+  discountPrice: z.number().nonnegative('Must be >= 0').default(0),
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
   isAvailable: z.boolean().default(true),
   order: z.number().int().nonnegative().default(0),
+}).refine((v) => v.discountPrice === 0 || v.discountPrice < v.basePrice, {
+  path: ['discountPrice'],
+  message: 'discountTooHigh',
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -58,6 +65,7 @@ const defaultValues: FormValues = {
   size: null,
   weightLabel: '',
   basePrice: 0,
+  discountPrice: 0,
   isFeatured: false,
   isNew: false,
   isAvailable: true,
@@ -74,9 +82,9 @@ export default function AdminProductFormPage() {
   const isEdit = Boolean(id);
 
   const [displayImage, setDisplayImage] = useState<File | string | null>(null);
-  const [styledImage, setStyledImage] = useState<File | string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageError, setImageError] = useState<{ display?: string; styled?: string }>({});
+  const [imageError, setImageError] = useState<string | undefined>();
+  const [imageNote, setImageNote] = useState<string | undefined>();
 
   const cats = useQuery({ queryKey: ['categoriesList'], queryFn: categoriesList, ...QUERY_OPTS });
   const existing = useQuery({
@@ -114,13 +122,13 @@ export default function AdminProductFormPage() {
       size: p.size ?? null,
       weightLabel: p.weight_label ?? '',
       basePrice: Number(p.base_price),
+      discountPrice: Number(p.discount_price ?? 0),
       isFeatured: p.is_featured,
       isNew: p.is_new ?? false,
       isAvailable: p.is_available,
       order: p.order ?? 0,
     });
     setDisplayImage(p.display_image);
-    setStyledImage(p.styled_image);
   }, [existing.data, reset]);
 
   const buildFormData = (values: FormValues): FormData => {
@@ -134,45 +142,68 @@ export default function AdminProductFormPage() {
     fd.append('size', values.sizeMode === 'SIZE' && values.size ? values.size : '');
     fd.append('weight_label', values.sizeMode === 'WEIGHT' ? values.weightLabel.trim() : '');
     fd.append('base_price', String(values.basePrice));
+    // Empty tells the API to clear any existing discount.
+    fd.append('discount_price', values.discountPrice > 0 ? String(values.discountPrice) : '');
     fd.append('is_featured', values.isFeatured ? 'true' : 'false');
     fd.append('is_new', values.isNew ? 'true' : 'false');
     fd.append('is_available', values.isAvailable ? 'true' : 'false');
     fd.append('order', String(values.order));
     if (displayImage instanceof File) fd.append('display_image', displayImage);
-    if (styledImage instanceof File) fd.append('styled_image', styledImage);
     return fd;
   };
 
   const sizeMode = watch('sizeMode');
+  const basePrice = watch('basePrice');
+  const discountPrice = watch('discountPrice');
+  const discountPercent =
+    discountPrice > 0 && basePrice > 0 && discountPrice < basePrice
+      ? Math.max(1, Math.round((1 - discountPrice / basePrice) * 100))
+      : 0;
+  const discountHelper = discountPercent
+    ? t('form.discountActive', { percent: discountPercent, was: basePrice })
+    : t('form.discountPriceHelper');
+
+  const onPickImage = async (file: File) => {
+    setImageError(undefined);
+    setImageNote(undefined);
+    const { file: prepared, saved } = await prepareImageForUpload(file);
+    setDisplayImage(prepared);
+    if (saved > 0) {
+      setImageNote(t('form.imageOptimised', { size: formatBytes(prepared.size), saved: formatBytes(saved) }));
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
-    const errs: typeof imageError = {};
-    if (!displayImage) errs.display = t('form.required');
-    if (!styledImage) errs.styled = t('form.required');
-    if (!isEdit && !(displayImage instanceof File)) errs.display = t('form.required');
-    if (!isEdit && !(styledImage instanceof File)) errs.styled = t('form.required');
-    if (Object.keys(errs).length) {
-      setImageError(errs);
+    if (!displayImage || (!isEdit && !(displayImage instanceof File))) {
+      setImageError(t('form.required'));
       return;
     }
 
-    setImageError({});
+    setImageError(undefined);
     setUploadProgress(0);
     try {
       const fd = buildFormData(values);
       if (isEdit && id) await productUpdate(id, fd, setUploadProgress);
       else await productCreate(fd, setUploadProgress);
-      await queryClient.invalidateQueries({ queryKey: ['admin.productsList'] });
-      await queryClient.invalidateQueries({ queryKey: ['admin.products'] });
-      await queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
-      await queryClient.invalidateQueries({ queryKey: ['productsList'] });
-      await queryClient.invalidateQueries({ queryKey: ['menu'] });
-      toast({ title: t('saved'), status: 'success', duration: 3000, position: 'top' });
-      navigate('/admin/products');
-    } catch {
-      toast({ title: t('saveError'), status: 'error', duration: 4000, position: 'top' });
+    } catch (error) {
+      toast({
+        title: saveErrorMessage(error, t),
+        status: 'error',
+        duration: 6000,
+        position: 'top',
+        isClosable: true,
+      });
       setUploadProgress(0);
+      return;
     }
+
+    // Past this point the product is saved — nothing here may raise an error
+    // toast for work that already succeeded.
+    for (const key of ['admin.productsList', 'admin.products', 'featuredProducts', 'productsList', 'menu']) {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    }
+    toast({ title: t('saved'), status: 'success', duration: 3000, position: 'top' });
+    navigate('/admin/products');
   };
 
   const onError = () => {
@@ -251,22 +282,20 @@ export default function AdminProductFormPage() {
             </SectionCard>
 
             <SectionCard step="2" title={t('form.sectionImages')} description={t('form.sectionImagesDesc')}>
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+              <Box maxW="440px">
                 <ImageDropZone
                   label={t('form.displayImage')}
                   hint={t('form.displayImageHint')}
                   value={displayImage}
-                  onChange={(f) => { setDisplayImage(f); setImageError((e) => ({ ...e, display: undefined })); }}
-                  error={imageError.display}
+                  onChange={onPickImage}
+                  error={imageError}
                 />
-                <ImageDropZone
-                  label={t('form.styledImage')}
-                  hint={t('form.styledImageHint')}
-                  value={styledImage}
-                  onChange={(f) => { setStyledImage(f); setImageError((e) => ({ ...e, styled: undefined })); }}
-                  error={imageError.styled}
-                />
-              </SimpleGrid>
+                {imageNote && (
+                  <Text fontSize="11px" color="green.600" mt={2}>
+                    {imageNote}
+                  </Text>
+                )}
+              </Box>
             </SectionCard>
 
             <SectionCard step="3" title={t('form.sectionPricing')} description={t('form.sectionPricingDesc')}>
@@ -353,6 +382,23 @@ export default function AdminProductFormPage() {
                       helper={t('form.basePriceHelper')}
                       isRequired
                       error={errors.basePrice?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                <Controller
+                  name="discountPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <NumberField
+                      label={t('form.discountPrice')}
+                      helper={discountHelper}
+                      error={
+                        errors.discountPrice?.message === 'discountTooHigh'
+                          ? t('form.discountTooHigh')
+                          : errors.discountPrice?.message
+                      }
                       value={field.value}
                       onChange={field.onChange}
                     />
@@ -517,4 +563,40 @@ function SectionCard({
       <Box p={{ base: 5, md: 6 }}>{children}</Box>
     </Box>
   );
+}
+
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/** DRF answers with {field: ["message"]} — pull out the first real sentence. */
+function firstFieldError(data: unknown): string | null {
+  if (typeof data === 'string') {
+    const text = data.trim();
+    return text && !text.startsWith('<') ? text.slice(0, 200) : null;
+  }
+  if (!data || typeof data !== 'object') return null;
+  for (const value of Object.values(data as Record<string, unknown>)) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+  }
+  return null;
+}
+
+/**
+ * Says what actually went wrong instead of a blanket "save failed".
+ *
+ * The timeout case matters most: the upload can give up while Django is still
+ * writing the product, so the owner used to see an error for a product that
+ * had in fact been saved. Now we tell them to check the list before retrying.
+ */
+function saveErrorMessage(error: unknown, t: Translate): string {
+  if (!axios.isAxiosError(error)) return t('saveError');
+  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return t('form.uploadTimeout');
+  if (!error.response) return t('form.networkError');
+
+  const { status, data } = error.response;
+  if (status === 413) return t('form.imageTooLarge');
+  if (status === 401 || status === 403) return t('form.sessionExpired');
+  const detail = firstFieldError(data);
+  if (detail) return detail;
+  return status >= 500 ? t('form.serverError') : t('saveError');
 }

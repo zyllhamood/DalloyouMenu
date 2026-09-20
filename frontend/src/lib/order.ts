@@ -1,6 +1,7 @@
 import type { Product } from './api';
 import { formatAmount } from './format';
 import { displayName } from './menu';
+import { effectivePrice, originalPrice } from './price';
 import { createWhatsAppUrl, productOrderMessage } from '../config/links';
 
 export function productUrl(product: Pick<Product, 'id'>): string {
@@ -14,7 +15,8 @@ export function productWhatsAppUrl(product: Product, measurement: string): strin
       // The size travels separately, so use the name without its "- حجم …" suffix.
       name: displayName(product),
       measurement,
-      price: formatAmount(product.base_price),
+      price: formatAmount(effectivePrice(product)),
+      wasPrice: formatAmount(originalPrice(product)),
       url: productUrl(product),
     }),
   );

@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next';
 import type { Product } from '../../lib/api';
 import { categoryName, displayName, measurementText, productDescription } from '../../lib/menu';
 import { productUrl, productWhatsAppUrl } from '../../lib/order';
+import { discountPercent, effectivePrice, hasDiscount, originalPrice } from '../../lib/price';
 import OrderChannels from './OrderChannels';
-import Price from './Price';
+import Price, { DiscountBadge } from './Price';
 import ProductGallery from './ProductGallery';
 
 interface ProductDetailsProps {
@@ -101,7 +102,8 @@ export function ProductDetails({ product, layout, orderRef }: ProductDetailsProp
         </Heading>
 
         <Flex mt={{ base: 4, md: 5 }} align="center" gap={4} wrap="wrap">
-          <Price value={product.base_price} size="xl" />
+          <Price value={effectivePrice(product)} original={originalPrice(product)} size="xl" />
+          {hasDiscount(product) && <DiscountBadge percent={discountPercent(product)} />}
           {measure && (
             <Box as="span" px={3.5} py={1.5} borderRadius="full" border="1px solid" borderColor="rgba(143,91,30,0.28)" color="brand.800" fontSize="13.5px" fontWeight={500}>
               {measure}

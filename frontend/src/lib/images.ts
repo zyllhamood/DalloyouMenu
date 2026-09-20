@@ -27,8 +27,12 @@ export function productImageSource(
   kind: ProductImageKind,
   { widths = DEFAULT_WIDTHS, width = 640 }: { widths?: number[]; width?: number } = {},
 ): ImageSource | null {
-  const original = kind === 'display' ? product.display_image : product.styled_image;
-  const path = kind === 'display' ? product.display_image_path : product.styled_image_path;
+  // Products carry a single photo now, so a request for the kind that is
+  // missing falls back to the one that exists rather than rendering nothing.
+  const wanted = kind === 'display' ? product.display_image : product.styled_image;
+  const resolved: ProductImageKind = wanted ? kind : kind === 'display' ? 'styled' : 'display';
+  const original = resolved === 'display' ? product.display_image : product.styled_image;
+  const path = resolved === 'display' ? product.display_image_path : product.styled_image_path;
   if (!original) return null;
   if (!path) return { src: original, original };
 

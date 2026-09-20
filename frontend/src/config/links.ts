@@ -49,15 +49,18 @@ export function productOrderMessage({
   name,
   measurement,
   price,
+  wasPrice,
   url,
 }: {
   name: string;
   measurement?: string;
   price?: string | null;
+  /** Pre-discount price, mentioned so staff can see the offer applied. */
+  wasPrice?: string | null;
   url?: string;
 }): string {
   const lines = ['السلام عليكم،', `أرغب بطلب: ${name}${measurement ? ` (${measurement})` : ''}`];
-  if (price) lines.push(`السعر: ${price} ر.س`);
+  if (price) lines.push(`السعر: ${price} ر.س${wasPrice ? ` (بدلاً من ${wasPrice} ر.س)` : ''}`);
   if (url) lines.push(url);
   return lines.join('\n');
 }

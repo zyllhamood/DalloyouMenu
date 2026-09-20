@@ -7,6 +7,7 @@ import { displayName, measurementText } from '../../lib/menu';
 import { useModalLinkState } from '../../lib/routing';
 import PhotoFrame from './PhotoFrame';
 import Price from './Price';
+import { effectivePrice, originalPrice } from '../../lib/price';
 import ProductImage from './ProductImage';
 
 /**
@@ -78,7 +79,7 @@ export function ProductRow({ product }: { product: Product }) {
             transform="translateY(-5px)"
             aria-hidden
           />
-          <Price value={product.base_price} size="sm" />
+          <Price value={effectivePrice(product)} original={originalPrice(product)} size="sm" />
         </Flex>
         {meta && (
           <Text mt={0.5} fontSize="12.5px" color="text.muted" noOfLines={1}>

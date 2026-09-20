@@ -15,6 +15,7 @@ import SectionHeader from '../components/ui/SectionHeader';
 import { productDetail, type Product } from '../lib/api';
 import { categoryName, displayName, measurementText, productDescription, relatedProducts, useMenuIndex } from '../lib/menu';
 import { productWhatsAppUrl } from '../lib/order';
+import { effectivePrice, originalPrice } from '../lib/price';
 
 function StickyOrderBar({ product, visible }: { product: Product; visible: boolean }) {
   const { t } = useTranslation();
@@ -54,7 +55,7 @@ function StickyOrderBar({ product, visible }: { product: Product; visible: boole
         >
           {displayName(product)}
         </Text>
-        <Price value={product.base_price} size="sm" tone="onDark" />
+        <Price value={effectivePrice(product)} original={originalPrice(product)} size="sm" tone="onDark" />
       </Box>
       <Button
         as="a"
@@ -171,7 +172,7 @@ export default function ProductPage() {
         <meta name="description" content={description.slice(0, 160)} />
         <meta property="og:title" content={`${name} — ${t('brand.name')}`} />
         <meta property="og:description" content={description.slice(0, 200)} />
-        {product.display_image && <meta property="og:image" content={product.styled_image || product.display_image} />}
+        {product.display_image && <meta property="og:image" content={product.display_image || product.styled_image || undefined} />}
       </Helmet>
 
       <Box data-nav-theme="light" pt={{ base: 'calc(var(--dy-nav-h) + 20px)', md: 'calc(var(--dy-nav-h) + 40px)' }} pb={{ base: 16, md: 24 }}>

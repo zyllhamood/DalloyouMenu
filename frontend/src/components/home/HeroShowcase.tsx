@@ -13,6 +13,7 @@ import type { Product } from '../../lib/api';
 import { productImageSource } from '../../lib/images';
 import { categoryName, displayName, measurementText } from '../../lib/menu';
 import { EASE_IN, EASE_OUT } from '../../lib/motion';
+import { effectivePrice, originalPrice } from '../../lib/price';
 import { useModalLinkState } from '../../lib/routing';
 
 const INTERVAL_MS = 5600;
@@ -281,7 +282,7 @@ export function HeroShowcase({ products, loading, play }: HeroShowcaseProps) {
               <HStack mt={1.5} justify="center" spacing={2.5} color="text.onDarkMuted" fontSize="13.5px">
                 {measure && <Text as="span">{measure}</Text>}
                 {measure && <Box as="span" w="3px" h="3px" borderRadius="full" bg="brand.400" />}
-                <Price value={current.base_price} size="sm" tone="onDark" />
+                <Price value={effectivePrice(current)} original={originalPrice(current)} size="sm" tone="onDark" />
               </HStack>
             </motion.div>
           )}

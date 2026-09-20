@@ -86,6 +86,8 @@
   "product": {
     "new": "جديد",
     "featured": "مميز",
+    "discountBadge": "خصم {{percent}}٪",
+    "wasPrice": "السعر قبل الخصم {{price}} ر.س",
     "sizeLabel": "حجم {{size}}",
     "orderWhatsapp": "اطلب عبر واتساب",
     "orderApps": "أو اطلب عبر تطبيقات التوصيل",

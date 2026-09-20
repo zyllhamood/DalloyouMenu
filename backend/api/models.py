@@ -43,6 +43,9 @@ class Product(models.Model):
     size = models.CharField(max_length=20, choices=SIZE_CHOICES, default='LARGE', blank=True, null=True)
     weight_label = models.CharField(max_length=80, blank=True)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # Sale price. Empty (or zero) means the product is not discounted; when set
+    # it must be below base_price and becomes the price customers pay.
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_new = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)

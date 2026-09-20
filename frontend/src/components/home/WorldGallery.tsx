@@ -88,7 +88,7 @@ export function WorldGallery() {
     const seen = new Set<number>();
     return [...index.featured, ...index.fresh, ...index.products]
       .filter((p) => {
-        if (!p.styled_image || seen.has(p.id)) return false;
+        if ((!p.styled_image && !p.display_image) || seen.has(p.id)) return false;
         seen.add(p.id);
         return true;
       })

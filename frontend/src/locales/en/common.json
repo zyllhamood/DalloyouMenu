@@ -80,6 +80,8 @@
   "product": {
     "new": "New",
     "featured": "Featured",
+    "discountBadge": "{{percent}}% off",
+    "wasPrice": "Was {{price}} SAR",
     "sizeLabel": "{{size}} size",
     "orderWhatsapp": "Order on WhatsApp",
     "orderApps": "Or order through a delivery app",

@@ -50,6 +50,7 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 import { adminProductsList, categoriesList, productDelete, productPatch } from '../../lib/api';
 import type { Product } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
+import { effectivePrice, hasDiscount } from '../../lib/price';
 import { getPrimaryProductImage } from '../../lib/productImages';
 
 type TFn = (key: string) => string;
@@ -235,9 +236,7 @@ function MobileProductCard({
                 {product.name_ar || product.name_en}
               </Text>
             </Box>
-            <Text fontSize="14px" fontWeight={600} whiteSpace="nowrap" flexShrink={0}>
-              {formatPrice(product.base_price, 'ar')}
-            </Text>
+            <AdminPrice product={product} fontSize="14px" fontWeight={600} />
           </Flex>
           <Text fontSize="11px" color="text.muted" mt={1} noOfLines={1}>
             {product.category.name_ar || product.category.name_en} · {adminMeasurementLabel(t, product)}
@@ -358,7 +357,7 @@ function SortableProductRow({
         </Text>
       </Td>
       <Td isNumeric>
-        <Text fontSize="12px" whiteSpace="nowrap">{formatPrice(product.base_price, 'ar')}</Text>
+        <AdminPrice product={product} fontSize="12px" />
       </Td>
       <Td>
         <Stack spacing={1} align="flex-start">
@@ -791,5 +790,35 @@ export default function AdminProductsPage() {
         body={`"${deleteTarget?.name_ar ?? deleteTarget?.name_en ?? ''}" — ${t('deleteConfirmBody')}`}
       />
     </Stack>
+  );
+}
+
+/** The price as customers see it: the sale price wins, the old one is struck. */
+function AdminPrice({
+  product,
+  fontSize,
+  fontWeight = 500,
+}: {
+  product: Product;
+  fontSize: string;
+  fontWeight?: number;
+}) {
+  const sale = hasDiscount(product);
+  return (
+    <HStack spacing={1.5} justify="flex-end" flexShrink={0}>
+      {sale && (
+        <Text fontSize="11px" color="text.muted" textDecoration="line-through" whiteSpace="nowrap">
+          {formatPrice(product.base_price, 'ar')}
+        </Text>
+      )}
+      <Text
+        fontSize={fontSize}
+        fontWeight={fontWeight}
+        whiteSpace="nowrap"
+        color={sale ? 'accent.goldDeep' : undefined}
+      >
+        {formatPrice(effectivePrice(product), 'ar')}
+      </Text>
+    </HStack>
   );
 }
