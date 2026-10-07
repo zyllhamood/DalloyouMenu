@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Visit
+from .models import Category, IpadCategory, IpadGalleryImage, IpadItem, IpadSettings, Product, Visit
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -24,3 +24,27 @@ class VisitAdmin(admin.ModelAdmin):
     search_fields = ('path', 'visitor_id', 'user_agent')
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
+
+
+@admin.register(IpadCategory)
+class IpadCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name_ar', 'name_en', 'order', 'is_visible')
+    ordering = ('order', 'id')
+
+
+@admin.register(IpadItem)
+class IpadItemAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'category', 'product', 'name_en', 'order', 'is_visible')
+    list_filter = ('category', 'is_visible')
+    list_select_related = ('category', 'product')
+    ordering = ('category__order', 'order', 'id')
+
+
+@admin.register(IpadGalleryImage)
+class IpadGalleryImageAdmin(admin.ModelAdmin):
+    list_display = ('image', 'order', 'created_at')
+
+
+@admin.register(IpadSettings)
+class IpadSettingsAdmin(admin.ModelAdmin):
+    list_display = ('location', 'idle_seconds', 'currency', 'gallery_visible')

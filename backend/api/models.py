@@ -86,3 +86,83 @@ class Visit(models.Model):
 
     def __str__(self):
         return f"{self.device_type} · {self.path}"
+
+
+# ─── iPad menu (dalloyou.com/ipad) ──────────────────────────────────────────
+# The in-store tablets show their own selection and order of the catalogue.
+# An item normally points at a website Product, which stays the single source
+# of truth for its name, price and availability; the iPad only adds what is
+# specific to the tablets (its own grouping, order, English name and photos).
+# An item without a product is tablet-only and carries its own name and price.
+
+
+class IpadCategory(models.Model):
+    name_ar = models.CharField(max_length=100)
+    name_en = models.CharField(max_length=100, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_visible = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.name_ar
+
+
+class IpadItem(models.Model):
+    category = models.ForeignKey(IpadCategory, on_delete=models.CASCADE, related_name='items')
+    # Deleting the website product removes it from the tablets too.
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, null=True, blank=True, related_name='ipad_items'
+    )
+    # Only used when there is no product.
+    name_ar = models.CharField(max_length=200, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    name_en = models.CharField(max_length=200, blank=True)
+    # Shown above the price on the detail screen ("البوكس", "24 قطعة").
+    # Empty means the product's own size or weight.
+    size_label = models.CharField(max_length=80, blank=True)
+    # Empty means the product's website photo.
+    image = models.ImageField(upload_to='ipad/items/', blank=True)
+    detail_image = models.ImageField(upload_to='ipad/details/', blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_visible = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.name_ar or (self.product.name_ar if self.product_id else f'iPad item {self.pk}')
+
+
+class IpadGalleryImage(models.Model):
+    """A photo on the tablets' «تصميمات خاصة» page (shown in random order)."""
+    image = models.ImageField(upload_to='ipad/gallery/')
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+
+class IpadSettings(models.Model):
+    """A single row (pk=1); read it with ``IpadSettings.load()``."""
+    idle_seconds = models.PositiveIntegerField(default=60)
+    location = models.CharField(max_length=120, blank=True)
+    currency = models.CharField(max_length=20, default='ر.س')
+    gallery_title_ar = models.CharField(max_length=100, default='تصميمات خاصة')
+    gallery_title_en = models.CharField(max_length=100, blank=True, default='Custom Designs')
+    gallery_visible = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'iPad settings'
+
+    @classmethod
+    def load(cls):
+        settings, _ = cls.objects.get_or_create(pk=1)
+        return settings

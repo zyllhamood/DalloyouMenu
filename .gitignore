@@ -1,0 +1,14 @@
+# Files that belong to each machine, not to the code. The server keeps its own
+# database and secrets; pushing them from here would overwrite the live data.
+backend/*.sqlite3*
+backend/.env
+
+# Python bytecode (regenerated automatically)
+__pycache__/
+*.pyc
+
+# macOS Finder metadata
+.DS_Store
+
+# The iPad menu is its own repository (github.com/zyllhamood/dalloyou-ipad)
+dalloyou-ipad/

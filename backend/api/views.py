@@ -1,11 +1,13 @@
 import logging
 
-from rest_framework import generics, viewsets
+from rest_framework import generics, mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.core.files.storage import default_storage
+from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from django.http import FileResponse, Http404, HttpResponseRedirect
@@ -14,9 +16,15 @@ from django.views.decorators.http import require_GET
 from datetime import timedelta
 
 from .images import render_thumbnail, snap_width
-from .models import Category, Product, Visit
+from .ipad import items_prefetch, public_menu
+from .models import Category, IpadCategory, IpadGalleryImage, IpadItem, IpadSettings, Product, Visit
 from .serializers import (
     CategorySerializer,
+    IpadCategorySerializer,
+    IpadGalleryImageSerializer,
+    IpadItemSerializer,
+    IpadProductChoiceSerializer,
+    IpadSettingsSerializer,
     MenuCategorySerializer,
     MenuProductSerializer,
     ProductListSerializer,
@@ -111,15 +119,24 @@ class MenuView(APIView):
         })
 
 
+def is_known_image(path):
+    """True when ``path`` is the storage name of a product or iPad menu image."""
+    return (
+        Product.objects.filter(Q(display_image=path) | Q(styled_image=path)).exists()
+        or IpadItem.objects.filter(Q(image=path) | Q(detail_image=path)).exists()
+        or IpadGalleryImage.objects.filter(image=path).exists()
+    )
+
+
 @require_GET
 def product_image(request, path):
-    """Serve a product image resized to ``?w=`` as cached WebP.
+    """Serve a product (or iPad menu) image resized to ``?w=`` as cached WebP.
 
     Only names that belong to a product image are accepted, so this can't be
     used to proxy arbitrary storage keys. If rendering fails the client is
     redirected to the original file rather than shown a broken image.
     """
-    if not Product.objects.filter(Q(display_image=path) | Q(styled_image=path)).exists():
+    if not is_known_image(path):
         raise Http404('Unknown image')
 
     width = snap_width(request.GET.get('w'))
@@ -265,6 +282,108 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return ProductWriteSerializer
         return ProductDetailSerializer
+
+# ─── iPad menu ──────────────────────────────────────────────────────────────
+
+class IpadMenuView(APIView):
+    """Everything the in-store tablets show, polled by dalloyou.com/ipad."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        response = Response(public_menu())
+        # Always revalidate: the tablets poll this to pick up admin changes.
+        response['Cache-Control'] = 'no-cache'
+        return response
+
+
+class AdminIpadOverviewView(APIView):
+    """The whole iPad menu for the admin page, with every website product to pick from."""
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        context = {'request': request}
+        categories = IpadCategory.objects.prefetch_related(items_prefetch())
+        products = Product.objects.select_related('category').order_by(
+            'category__order', 'category_id', 'order', '-created_at'
+        )
+        return Response({
+            'settings': IpadSettingsSerializer(IpadSettings.load()).data,
+            'categories': [
+                {
+                    **IpadCategorySerializer(category, context=context).data,
+                    'items': IpadItemSerializer(category.items.all(), many=True, context=context).data,
+                }
+                for category in categories
+            ],
+            'gallery': IpadGalleryImageSerializer(
+                IpadGalleryImage.objects.all(), many=True, context=context
+            ).data,
+            'products': IpadProductChoiceSerializer(products, many=True, context=context).data,
+        })
+
+
+class AdminIpadSettingsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        return Response(IpadSettingsSerializer(IpadSettings.load()).data)
+
+    def patch(self, request):
+        serializer = IpadSettingsSerializer(IpadSettings.load(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+def apply_order(model, request):
+    """``{"ids": [3, 1, 2]}`` → those rows get order 0, 1, 2."""
+    ids = request.data.get('ids') if hasattr(request.data, 'get') else None
+    if not isinstance(ids, list) or not ids or not all(isinstance(i, int) for i in ids):
+        return Response({'ids': 'Send a non-empty list of ids.'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(set(ids)) != len(ids) or model.objects.filter(pk__in=ids).count() != len(ids):
+        return Response({'ids': 'Unknown or repeated id.'}, status=status.HTTP_400_BAD_REQUEST)
+    with transaction.atomic():
+        for index, pk in enumerate(ids):
+            model.objects.filter(pk=pk).update(order=index)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminIpadCategoryViewSet(viewsets.ModelViewSet):
+    queryset = IpadCategory.objects.all()
+    serializer_class = IpadCategorySerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = None
+
+    @action(detail=False, methods=['post'])
+    def reorder(self, request):
+        return apply_order(IpadCategory, request)
+
+
+class AdminIpadItemViewSet(viewsets.ModelViewSet):
+    queryset = IpadItem.objects.select_related('product')
+    serializer_class = IpadItemSerializer
+    permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    pagination_class = None
+
+    @action(detail=False, methods=['post'])
+    def reorder(self, request):
+        return apply_order(IpadItem, request)
+
+
+class AdminIpadGalleryViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = IpadGalleryImage.objects.all()
+    serializer_class = IpadGalleryImageSerializer
+    permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser]
+    pagination_class = None
+
 
 # Auth Views
 class MeView(APIView):

@@ -20,6 +20,7 @@ const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
 const AdminProductFormPage = lazy(() => import('./pages/admin/AdminProductFormPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
 const AdminVisitsPage = lazy(() => import('./pages/admin/AdminVisitsPage'));
+const AdminIpadPage = lazy(() => import('./pages/admin/AdminIpadPage'));
 
 function Lazy({ children }: { children: ReactNode }) {
   return (
@@ -69,6 +70,7 @@ export function AppRoutes() {
           <Route path="/admin/products/:id" element={<Lazy><AdminProductFormPage /></Lazy>} />
           <Route path="/admin/categories" element={<Lazy><AdminCategoriesPage /></Lazy>} />
           <Route path="/admin/visits" element={<Lazy><AdminVisitsPage /></Lazy>} />
+          <Route path="/admin/ipad" element={<Lazy><AdminIpadPage /></Lazy>} />
         </Route>
       </Routes>
 

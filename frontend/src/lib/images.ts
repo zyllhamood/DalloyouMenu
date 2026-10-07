@@ -22,6 +22,11 @@ function encodeStoragePath(path: string): string {
   return path.split('/').map(encodeURIComponent).join('/');
 }
 
+/** A sized WebP of any image the API knows (product or iPad menu photo). */
+export function thumbnailUrl(path: string | null | undefined, width: number): string | null {
+  return path ? `${API_BASE_URL}/img/${encodeStoragePath(path)}?w=${width}` : null;
+}
+
 export function productImageSource(
   product: Pick<Product, 'display_image' | 'styled_image' | 'display_image_path' | 'styled_image_path'>,
   kind: ProductImageKind,

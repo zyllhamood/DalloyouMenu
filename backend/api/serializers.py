@@ -1,5 +1,15 @@
 from rest_framework import serializers
-from .models import Category, Product, Visit
+
+from .ipad import next_order, product_size_label, resolve_item
+from .models import (
+    Category,
+    IpadCategory,
+    IpadGalleryImage,
+    IpadItem,
+    IpadSettings,
+    Product,
+    Visit,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -138,3 +148,148 @@ class VisitListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visit
         fields = ('id', 'visitor_id', 'path', 'device_type', 'created_at')
+
+
+# ─── iPad menu (admin) ──────────────────────────────────────────────────────
+
+
+def storage_name(field):
+    return field.name or None
+
+
+class IpadCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IpadCategory
+        fields = ('id', 'name_ar', 'name_en', 'order', 'is_visible')
+        extra_kwargs = {'order': {'required': False}}
+
+    def validate_name_ar(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('اكتب اسم الفئة.')
+        return value
+
+    def create(self, validated_data):
+        validated_data.setdefault('order', next_order(IpadCategory.objects.all()))
+        return super().create(validated_data)
+
+
+class IpadItemSerializer(serializers.ModelSerializer):
+    """An iPad item as the admin edits it, plus ``resolved``: what the tablets show."""
+
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=IpadCategory.objects.all(), source='category'
+    )
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='product', allow_null=True, required=False
+    )
+    # Sending an empty value clears the photo (the tablet then falls back to
+    # the website photo, or shows a single photo on the detail screen).
+    image = serializers.ImageField(required=False, allow_null=True)
+    detail_image = serializers.ImageField(required=False, allow_null=True)
+    image_path = serializers.SerializerMethodField()
+    detail_image_path = serializers.SerializerMethodField()
+    resolved = serializers.SerializerMethodField()
+
+    class Meta:
+        model = IpadItem
+        fields = (
+            'id', 'category_id', 'product_id', 'name_ar', 'price', 'name_en', 'size_label',
+            'image', 'image_path', 'detail_image', 'detail_image_path', 'order', 'is_visible',
+            'resolved',
+        )
+        extra_kwargs = {'order': {'required': False}}
+
+    def get_image_path(self, obj):
+        return storage_name(obj.image)
+
+    def get_detail_image_path(self, obj):
+        return storage_name(obj.detail_image)
+
+    def get_resolved(self, obj):
+        return resolve_item(obj)
+
+    def validate(self, attrs):
+        product = attrs['product'] if 'product' in attrs else getattr(self.instance, 'product', None)
+        if product is None:
+            name = attrs.get('name_ar', getattr(self.instance, 'name_ar', '') or '').strip()
+            if not name:
+                raise serializers.ValidationError(
+                    {'name_ar': 'اختر منتج من الموقع، أو اكتب اسم المنتج الخاص بالايباد.'}
+                )
+            attrs['name_ar'] = name
+            price = attrs.get('price')
+            if price is not None and price < 0:
+                raise serializers.ValidationError({'price': 'السعر ما يصير بالسالب.'})
+        else:
+            # Linked items always show the website's name and price.
+            attrs['name_ar'] = ''
+            attrs['price'] = None
+        for field in ('name_en', 'size_label'):
+            if field in attrs:
+                attrs[field] = attrs[field].strip()
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.setdefault('order', next_order(validated_data['category'].items.all()))
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        category = validated_data.get('category')
+        if category is not None and category.pk != instance.category_id and 'order' not in validated_data:
+            # Moved to another category: it joins the end of that list.
+            validated_data['order'] = next_order(category.items.all())
+        return super().update(instance, validated_data)
+
+
+class IpadGalleryImageSerializer(serializers.ModelSerializer):
+    image_path = serializers.SerializerMethodField()
+
+    class Meta:
+        model = IpadGalleryImage
+        fields = ('id', 'image', 'image_path', 'order')
+        extra_kwargs = {'order': {'required': False}}
+
+    def get_image_path(self, obj):
+        return storage_name(obj.image)
+
+    def create(self, validated_data):
+        validated_data.setdefault('order', next_order(IpadGalleryImage.objects.all()))
+        return super().create(validated_data)
+
+
+class IpadSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IpadSettings
+        fields = (
+            'idle_seconds', 'location', 'currency',
+            'gallery_title_ar', 'gallery_title_en', 'gallery_visible',
+        )
+        extra_kwargs = {'idle_seconds': {'min_value': 10, 'max_value': 3600}}
+
+    def validate_gallery_title_ar(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('اكتب اسم الصفحة.')
+        return value
+
+
+class IpadProductChoiceSerializer(serializers.ModelSerializer):
+    """A website product as the iPad admin's product picker lists it."""
+
+    category = MenuProductCategorySerializer(read_only=True)
+    size_label = serializers.SerializerMethodField()
+    display_image_path = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id', 'name_ar', 'category', 'base_price', 'discount_price', 'is_available',
+            'size_label', 'display_image_path',
+        )
+
+    def get_size_label(self, obj):
+        return product_size_label(obj)
+
+    def get_display_image_path(self, obj):
+        return storage_name(obj.display_image) or storage_name(obj.styled_image)

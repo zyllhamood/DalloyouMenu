@@ -25,6 +25,7 @@ import {
   LogOut,
   Menu,
   Package,
+  Tablet,
   Tag,
   User,
   X,
@@ -47,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin', labelKey: 'dashboard', icon: <LayoutDashboard size={16} />, end: true },
   { to: '/admin/products', labelKey: 'products', icon: <Package size={16} /> },
   { to: '/admin/categories', labelKey: 'categories', icon: <Tag size={16} /> },
+  { to: '/admin/ipad', labelKey: 'ipad.nav', icon: <Tablet size={16} /> },
   { to: '/admin/visits', labelKey: 'visits.title', icon: <Eye size={16} /> },
 ];
 
@@ -75,6 +77,9 @@ function getCrumbs(path: string, t: TFn): Crumb[] {
   }
   if (path.startsWith('/admin/visits')) {
     return [{ label: t('visits.title') }];
+  }
+  if (path.startsWith('/admin/ipad')) {
+    return [{ label: t('ipad.title') }];
   }
   return [];
 }
