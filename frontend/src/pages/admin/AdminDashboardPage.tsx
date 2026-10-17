@@ -18,7 +18,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Package, Plus, Star, Tag } from 'lucide-react';
+import { ListChecks, Package, Plus, Star, Tag } from 'lucide-react';
 
 import StatCard from '../../components/admin/StatCard';
 import { adminProductsList, categoriesList, productsList } from '../../lib/api';
@@ -156,6 +156,10 @@ export default function AdminDashboardPage() {
           {t('quickActions')}
         </Text>
         <HStack spacing={3} wrap="wrap">
+          <Button as={RouterLink} to="/admin/tasks" h="52px" px={7} variant="goldOutline"
+            fontSize="13px" leftIcon={<ListChecks size={16} />}>
+            {t('tasks.title')}
+          </Button>
           <Button
             as={RouterLink}
             to="/admin/products/new"

@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .tasks import AdminTaskViewSet
 from .views import (
     CategoryListView,
     ProductListView,
@@ -22,6 +23,7 @@ from .views import (
 )
 
 router = DefaultRouter()
+router.register(r'admin/tasks', AdminTaskViewSet, basename='admin-task')
 router.register(r'admin/categories', AdminCategoryViewSet, basename='admin-category')
 router.register(r'admin/products', AdminProductViewSet, basename='admin-product')
 router.register(r'admin/ipad/categories', AdminIpadCategoryViewSet, basename='admin-ipad-category')

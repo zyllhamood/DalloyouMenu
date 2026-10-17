@@ -1,6 +1,26 @@
 from django.db import models
 from django.utils.text import slugify
 
+
+class Task(models.Model):
+    class Kind(models.TextChoices):
+        ONCE = 'ONCE', 'One time'
+        DAILY = 'DAILY', 'Daily'
+
+    title = models.CharField(max_length=500)
+    kind = models.CharField(max_length=5, choices=Kind.choices, default=Kind.ONCE)
+    order = models.PositiveIntegerField(default=0)
+    # Daily tasks keep just their last completion, never a row per missed day.
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.title
+
+
 class Category(models.Model):
     name_en = models.CharField(max_length=100)
     name_ar = models.CharField(max_length=100)

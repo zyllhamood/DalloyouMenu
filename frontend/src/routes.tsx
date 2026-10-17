@@ -16,6 +16,7 @@ import NotFoundPage from './pages/NotFoundPage';
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminTasksPage = lazy(() => import('./pages/admin/AdminTasksPage'));
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
 const AdminProductFormPage = lazy(() => import('./pages/admin/AdminProductFormPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
@@ -65,6 +66,7 @@ export function AppRoutes() {
           }
         >
           <Route path="/admin" element={<Lazy><AdminDashboardPage /></Lazy>} />
+          <Route path="/admin/tasks" element={<Lazy><AdminTasksPage /></Lazy>} />
           <Route path="/admin/products" element={<Lazy><AdminProductsPage /></Lazy>} />
           <Route path="/admin/products/new" element={<Lazy><AdminProductFormPage /></Lazy>} />
           <Route path="/admin/products/:id" element={<Lazy><AdminProductFormPage /></Lazy>} />

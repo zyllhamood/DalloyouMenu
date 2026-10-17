@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Eye,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Menu,
   Package,
@@ -46,6 +47,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/admin', labelKey: 'dashboard', icon: <LayoutDashboard size={16} />, end: true },
+  { to: '/admin/tasks', labelKey: 'tasks.title', icon: <ListChecks size={16} /> },
   { to: '/admin/products', labelKey: 'products', icon: <Package size={16} /> },
   { to: '/admin/categories', labelKey: 'categories', icon: <Tag size={16} /> },
   { to: '/admin/ipad', labelKey: 'ipad.nav', icon: <Tablet size={16} /> },
@@ -74,6 +76,9 @@ function getCrumbs(path: string, t: TFn): Crumb[] {
   }
   if (path.startsWith('/admin/categories')) {
     return [{ label: t('categories') }];
+  }
+  if (path.startsWith('/admin/tasks')) {
+    return [{ label: t('tasks.title') }];
   }
   if (path.startsWith('/admin/visits')) {
     return [{ label: t('visits.title') }];
