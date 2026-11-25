@@ -46,7 +46,7 @@ export function Footer() {
       bg="noir.800"
       color="text.onDark"
       overflow="hidden"
-      pb={{ base: '112px', md: 0 }}
+      pb={{ base: '112px', md: 10 }}
     >
       <Container maxW="1320px" position="relative" zIndex={1} pt={{ base: 20, md: 28 }}>
         <Grid templateColumns={{ base: '1fr', lg: '1.1fr 0.9fr' }} gap={{ base: 10, lg: 24 }} alignItems="center">
@@ -164,26 +164,6 @@ export function Footer() {
           <Text>{t('footer.madeIn')}</Text>
         </Flex>
       </Container>
-
-      <Box
-        aria-hidden
-        lang="en"
-        dir="ltr"
-        mt={{ base: 10, md: 14 }}
-        mb={{ base: '-0.2em' }}
-        textAlign="center"
-        whiteSpace="nowrap"
-        userSelect="none"
-        fontFamily="latin"
-        fontWeight={500}
-        fontSize="clamp(52px, 12.5vw, 210px)"
-        lineHeight={0.82}
-        letterSpacing="0.16em"
-        color="transparent"
-        sx={{ WebkitTextStroke: '1px rgba(227, 183, 117, 0.2)', paddingInlineStart: '0.16em' }}
-      >
-        DALLOYOU
-      </Box>
     </Box>
   );
 }

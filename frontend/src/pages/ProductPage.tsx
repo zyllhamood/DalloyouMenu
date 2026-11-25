@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Helmet } from 'react-helmet-async';
 
+import Seo from '../components/Seo';
 import { WhatsAppGlyph } from '../components/WhatsAppIcon';
 import Price from '../components/product/Price';
 import { ProductCardSkeleton } from '../components/product/ProductCard';
@@ -13,9 +13,11 @@ import ProductDetails from '../components/product/ProductDetails';
 import ProductRail from '../components/product/ProductRail';
 import SectionHeader from '../components/ui/SectionHeader';
 import { productDetail, type Product } from '../lib/api';
-import { categoryName, displayName, measurementText, productDescription, relatedProducts, useMenuIndex } from '../lib/menu';
+import { categoryName, displayName, measurementText, relatedProducts, useMenuIndex } from '../lib/menu';
 import { productWhatsAppUrl } from '../lib/order';
 import { effectivePrice, originalPrice } from '../lib/price';
+import { formatAmount } from '../lib/format';
+import { breadcrumbJsonLd, categoryPath, productJsonLd, productPath, productSeoDescription, productShareImage } from '../lib/seo';
 
 function StickyOrderBar({ product, visible }: { product: Product; visible: boolean }) {
   const { t } = useTranslation();
@@ -142,10 +144,7 @@ export default function ProductPage() {
   if (!product) {
     return (
       <Container maxW="560px" pt="calc(var(--dy-nav-h) + 96px)" pb={32}>
-        <Helmet>
-          <title>{`${t('product.notFound')} — ${t('brand.name')}`}</title>
-          <meta name="robots" content="noindex" />
-        </Helmet>
+        <Seo title={`${t('product.notFound')} — ${t('brand.name')}`} description={t('product.notFoundHint')} path={`/product/${id ?? ''}`} noindex />
         <Stack align="center" textAlign="center" spacing={4}>
           <Heading as="h1" fontFamily="display" fontWeight={700} fontSize={{ base: '32px', md: '40px' }}>
             {t('product.notFound')}
@@ -162,18 +161,30 @@ export default function ProductPage() {
   }
 
   const name = displayName(product);
-  const description = productDescription(product) || t('page.productDescFallback');
   const related = fromMenu ? relatedProducts(index, product, 10) : [];
+  const price = formatAmount(effectivePrice(product)) ?? '';
+  const seoDescription = productSeoDescription(product, t, measurementText(product, t), price);
+  const shareImage = productShareImage(product);
 
   return (
     <>
-      <Helmet>
-        <title>{`${name} — ${t('brand.name')}`}</title>
-        <meta name="description" content={description.slice(0, 160)} />
-        <meta property="og:title" content={`${name} — ${t('brand.name')}`} />
-        <meta property="og:description" content={description.slice(0, 200)} />
-        {product.display_image && <meta property="og:image" content={product.display_image || product.styled_image || undefined} />}
-      </Helmet>
+      <Seo
+        title={t('seo.productTitle', { name, category: categoryName(product.category), price })}
+        description={seoDescription}
+        path={productPath(product)}
+        type="product"
+        image={shareImage ? { url: shareImage, width: 1200, height: 1200, alt: name } : undefined}
+        price={{ amount: effectivePrice(product).toFixed(2), currency: 'SAR' }}
+        jsonLd={[
+          productJsonLd(product, seoDescription),
+          breadcrumbJsonLd([
+            { name: t('nav.home'), path: '/' },
+            { name: t('nav.menu'), path: '/menu' },
+            { name: categoryName(product.category), path: categoryPath(product.category) },
+            { name, path: productPath(product) },
+          ]),
+        ]}
+      />
 
       <Box data-nav-theme="light" pt={{ base: 'calc(var(--dy-nav-h) + 20px)', md: 'calc(var(--dy-nav-h) + 40px)' }} pb={{ base: 16, md: 24 }}>
         <Container maxW="1320px">

@@ -12,7 +12,8 @@ import { useAuthStore } from './stores/authStore';
 import { useVisitTracking } from './hooks/useVisitTracking';
 import AppRoutes from './routes';
 
-function AppShell() {
+/** The app inside its providers — shared by the browser (App) and the build's prerender (entry-server). */
+export function AppShell() {
   const hydrate = useAuthStore((s) => s.hydrate);
 
   useEffect(() => {

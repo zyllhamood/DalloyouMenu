@@ -1,11 +1,11 @@
 import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button, Container, Flex, Heading, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, Heading, HStack, SimpleGrid, Stack, Text, VisuallyHidden } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Helmet } from 'react-helmet-async';
 
 import Monogram from '../components/brand/Monogram';
+import Seo from '../components/Seo';
 import { SearchField, SizeChips, ViewToggle, type MenuView } from '../components/menu/MenuControls';
 import { ArchOutline } from '../components/brand/Arch';
 import ProductCard, { ProductCardSkeleton } from '../components/product/ProductCard';
@@ -15,8 +15,9 @@ import Reveal from '../components/ui/Reveal';
 import SplitWords from '../components/ui/SplitWords';
 import { useScrollSpy } from '../hooks/useScrollSpy';
 import type { MenuCategory, Product, VariantSize } from '../lib/api';
-import { categoryName, matchesSearch, searchHaystack, useMenuIndex } from '../lib/menu';
+import { categoryName, displayName, matchesSearch, searchHaystack, useMenuIndex } from '../lib/menu';
 import { navHeight, scrollToElement } from '../lib/motion';
+import { breadcrumbJsonLd, categoryJsonLd, categoryPath, clampDescription, menuJsonLd } from '../lib/seo';
 import { SIZE_OPTIONS } from '../lib/productMeasurement';
 import { useUiStore } from '../stores/uiStore';
 
@@ -107,6 +108,47 @@ function MenuMessage({ title, body, action, onAction }: { title: string; body: s
 }
 
 /**
+ * The menu's head: the whole menu at /menu, or one category at
+ * /menu/:slug — each with its own title, description and structured data,
+ * so a search for "كيك" in Khobar can land on the cakes.
+ */
+function MenuSeo({ categorySlug }: { categorySlug?: string }) {
+  const { t } = useTranslation();
+  const { index } = useMenuIndex();
+  const home = { name: t('nav.home'), path: '/' };
+  const menu = { name: t('nav.menu'), path: '/menu' };
+  const category = categorySlug ? index.categories.find((c) => c.slug === categorySlug) : undefined;
+
+  if (category) {
+    const products = index.byCategory.get(category.id) ?? [];
+    const name = categoryName(category);
+    return (
+      <Seo
+        title={t('seo.categoryTitle', { category: name, count: t('menu.items', { count: products.length }) })}
+        description={clampDescription(t('seo.categoryDesc', {
+          category: name,
+          names: products
+            .slice(0, 4)
+            .map((p) => displayName(p))
+            .join('، '),
+        }))}
+        path={categoryPath(category)}
+        jsonLd={[categoryJsonLd(category, products), breadcrumbJsonLd([home, menu, { name, path: categoryPath(category) }])]}
+      />
+    );
+  }
+
+  return (
+    <Seo
+      title={t('seo.menuTitle')}
+      description={clampDescription(t('seo.menuDesc', { categories: index.categories.map(categoryName).join('، ') }))}
+      path={categorySlug ? `/menu/${categorySlug}` : '/menu'}
+      jsonLd={index.categories.length ? [menuJsonLd(index, t), breadcrumbJsonLd([home, menu])] : [breadcrumbJsonLd([home, menu])]}
+    />
+  );
+}
+
+/**
  * The menu as one continuous, sectioned page — the way people browse food
  * menus on their phones. Sticky category tabs follow the scroll and jump on
  * tap; search forgives Arabic spelling variants; sizes filter in place; and
@@ -118,6 +160,7 @@ export default function MenuPage() {
   const [params, setParams] = useSearchParams();
   const { index, isLoading, isError, refetch } = useMenuIndex();
   const navHidden = useUiStore((s) => s.navHidden);
+  const pageCategory = categorySlug ? index.categories.find((c) => c.slug === categorySlug) : undefined;
 
   const [query, setQuery] = useState(() => params.get('q') ?? '');
   const [size, setSize] = useState<VariantSize | null>(() => parseSize(params.get('size')));
@@ -243,12 +286,7 @@ export default function MenuPage() {
 
   return (
     <>
-      <Helmet>
-        <title>{t('page.menuTitle')}</title>
-        <meta name="description" content={t('page.menuDesc')} />
-        <meta property="og:title" content={t('page.menuTitle')} />
-        <meta property="og:description" content={t('page.menuDesc')} />
-      </Helmet>
+      <MenuSeo categorySlug={categorySlug} />
 
       {/* ── Header ── */}
       <Box
@@ -274,6 +312,8 @@ export default function MenuPage() {
             <Box>
               <Heading as="h1" fontFamily="display" fontWeight={700} fontSize={{ base: '54px', md: '80px' }} lineHeight={1.15}>
                 <SplitWords text={t('menu.title')} />
+                {/* A category's own address names it in the heading (for search and screen readers). */}
+                {pageCategory && <VisuallyHidden>{` — ${categoryName(pageCategory)}`}</VisuallyHidden>}
               </Heading>
               <Text mt={3} color="text.muted" fontSize={{ base: '16px', md: '18px' }} lineHeight={1.8}>
                 {t('menu.subtitle')}

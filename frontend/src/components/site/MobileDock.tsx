@@ -40,7 +40,6 @@ export function MobileDock() {
   const { t } = useTranslation();
   const { pathname, hash } = useLocation();
   const openOrder = useUiStore((s) => s.openOrder);
-  const introActive = useUiStore((s) => s.introActive);
   const onBranches = useBranchesLink();
   const pastFold = useSyncExternalStore(subscribeToScroll, isPastFold, () => false);
   const pastHero = pathname !== '/' || pastFold;
@@ -52,7 +51,7 @@ export function MobileDock() {
     { key: 'nav.branches', to: BRANCHES_TO, icon: MapPin, active: onBranchesHash, onClick: onBranches },
   ];
 
-  const visible = pastHero && !introActive && !pathname.startsWith('/product');
+  const visible = pastHero && !pathname.startsWith('/product');
 
   return (
     <Box

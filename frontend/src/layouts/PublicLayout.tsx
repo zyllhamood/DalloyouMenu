@@ -5,7 +5,6 @@ import { useLocation, useNavigationType, useOutlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import Footer from '../components/site/Footer';
-import IntroCurtain from '../components/site/IntroCurtain';
 import MobileDock from '../components/site/MobileDock';
 import Navbar from '../components/site/Navbar';
 import OrderSheet from '../components/site/OrderSheet';
@@ -123,7 +122,6 @@ export function PublicLayout() {
       <Footer />
       <MobileDock />
       <OrderSheet />
-      <IntroCurtain />
     </Box>
   );
 }

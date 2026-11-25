@@ -172,5 +172,19 @@
     "skipIntro": "Skip intro",
     "home": "Dalloyou — home",
     "skipToContent": "Skip to content"
+  },
+  "seo": {
+    "homeTitle": "Dalloyou | Cakes, desserts & chocolate in Khobar and Dammam",
+    "homeDesc": "Dalloyou is a dessert house in Khobar and Dammam: cakes for every occasion, chocolate, savouries and favours, made fresh every day. Order on WhatsApp, HungerStation, The Chefz or Keeta.",
+    "homeHeading": "Dalloyou — cakes, desserts and chocolate in Khobar and Dammam",
+    "menuTitle": "Dalloyou menu & prices | Cakes, chocolate and savouries in Khobar and Dammam",
+    "menuDesc": "The full Dalloyou menu with prices: {{categories}}. Order on WhatsApp or through the delivery apps in Khobar and Dammam.",
+    "menuName": "Dalloyou menu",
+    "categoryTitle": "{{category}} by Dalloyou | {{count}} with prices — Khobar & Dammam",
+    "categoryDesc": "{{category}} by Dalloyou in Khobar and Dammam: {{names}}. See the prices and order on WhatsApp or the delivery apps.",
+    "productTitle": "{{name}} | {{category}} by Dalloyou — SAR {{price}}",
+    "productFacts": "{{name}} by Dalloyou ({{category}}{{measure}}) for SAR {{price}}.",
+    "productCta": "Made fresh — order on WhatsApp or the delivery apps in Khobar and Dammam.",
+    "notFoundTitle": "Page not found — Dalloyou"
   }
 }

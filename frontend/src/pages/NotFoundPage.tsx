@@ -1,20 +1,18 @@
 import { Box, Button, Container, Heading, Stack, Text } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Helmet } from 'react-helmet-async';
 
 import Monogram from '../components/brand/Monogram';
+import Seo from '../components/Seo';
 import ArchStage, { ArchOutline } from '../components/brand/Arch';
 
 export default function NotFoundPage() {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
 
   return (
     <>
-      <Helmet>
-        <title>{`404 — ${t('brand.name')}`}</title>
-        <meta name="robots" content="noindex" />
-      </Helmet>
+      <Seo title={t('seo.notFoundTitle')} description={t('seo.homeDesc')} path={pathname} noindex />
 
       <Container maxW="640px" pt={{ base: 'calc(var(--dy-nav-h) + 56px)', md: 'calc(var(--dy-nav-h) + 88px)' }} pb={{ base: 28, md: 36 }} data-nav-theme="light">
         <Stack spacing={7} align="center" textAlign="center">

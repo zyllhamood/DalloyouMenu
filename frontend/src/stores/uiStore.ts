@@ -15,27 +15,6 @@ interface UiState {
   openOrder: () => void;
   closeOrder: () => void;
 
-  /** True while the first-visit intro curtain is on screen. */
-  introActive: boolean;
-  setIntroActive: (active: boolean) => void;
-}
-
-export const INTRO_STORAGE_KEY = 'dalloyou.intro.v1';
-
-/**
- * The intro curtain plays once per browser session, only when the visit
- * starts on the homepage, and never for visitors who prefer reduced motion.
- * Decided before the first render so the hero can wait for it.
- */
-function initialIntro(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (window.location.pathname !== '/') return false;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-  try {
-    return !window.sessionStorage.getItem(INTRO_STORAGE_KEY);
-  } catch {
-    return false;
-  }
 }
 
 function initialLanguage(): SupportedLanguage {
@@ -72,6 +51,4 @@ export const useUiStore = create<UiState>((set) => ({
   openOrder: () => set({ orderOpen: true }),
   closeOrder: () => set({ orderOpen: false }),
 
-  introActive: initialIntro(),
-  setIntroActive: (introActive) => set({ introActive }),
 }));

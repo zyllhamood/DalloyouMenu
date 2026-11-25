@@ -14,7 +14,7 @@
     <meta property="og:locale" content="ar_SA" />
     <meta property="og:title" content="داليو — حلويات فاخرة" />
     <meta property="og:description" content="صُنعت بعناية، تُقدَّم برقي. تصفّح قائمة داليو واطلب بسهولة." />
-    <meta property="og:image" content="/brand/og-image.jpg" />
+    <meta property="og:image" content="https://dalloyou.com/brand/og-image.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png" />
@@ -22,6 +22,9 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/brand/icon-192.png" />
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
 
+    <!-- The API serves the menu (fetch) and every product photo (img): warm both connections. -->
+    <link rel="preconnect" href="%VITE_API_BASE_URL%" crossorigin />
+    <link rel="preconnect" href="%VITE_API_BASE_URL%" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -434,7 +434,7 @@ export default function AdminProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
   const { isOpen: confirmOpen, onOpen: openConfirm, onClose: closeConfirm } = useDisclosure();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
-  const orderQueue = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const orderQueue = useRef<Map<number, number>>(new Map());
 
   const hasFilters = Boolean(search || category || status);
 

@@ -3,9 +3,10 @@ import { formatAmount } from './format';
 import { displayName } from './menu';
 import { effectivePrice, originalPrice } from './price';
 import { createWhatsAppUrl, productOrderMessage } from '../config/links';
+import { currentOrigin } from './site';
 
 export function productUrl(product: Pick<Product, 'id'>): string {
-  return `${window.location.origin}/product/${product.id}`;
+  return `${currentOrigin()}/product/${product.id}`;
 }
 
 /** wa.me link with the product, its size, price and page link pre-filled. */

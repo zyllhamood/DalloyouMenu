@@ -1,30 +1,30 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Helmet } from 'react-helmet-async';
 
-import CategoryShowcase from '../components/home/CategoryShowcase';
-import Hero from '../components/home/Hero';
-import Marquee from '../components/home/Marquee';
-import NewArrivals from '../components/home/NewArrivals';
-import StorySection from '../components/home/StorySection';
-import VisitSection from '../components/home/VisitSection';
-import WorldGallery from '../components/home/WorldGallery';
-import { BRANCHES, SOCIALS, WHATSAPP_NUMBER } from '../config/links';
+import Seo from '../components/Seo';
+import SmoothScroll from '../components/site/SmoothScroll';
+import HomeCollections from '../components/home/HomeCollections';
+import HomeGallery from '../components/home/HomeGallery';
+import HomeHero from '../components/home/HomeHero';
+import HomeOccasions from '../components/home/HomeOccasions';
+import HomeStory from '../components/home/HomeStory';
+import HomeVisit from '../components/home/HomeVisit';
 import { useMenu } from '../lib/menu';
 import { navHeight, scrollToElement } from '../lib/motion';
+import { businessJsonLd, websiteJsonLd } from '../lib/seo';
 import { BRANCHES_ID } from '../lib/useBranchesLink';
 
 /**
- * Homepage rhythm — noir → ivory → noir → ivory → noir:
- *   1. Hero         the lit arch and the house line
- *   2. Marquee      categories and promises, in motion
- *   3. Categories   one niche per category
- *   4. New          a shelf of the latest pieces
- *   5. Story        the statement, lit as you read
- *   6. World        lifestyle photography
- *   7. Visit        the two branches
- *   (footer: the invitation to order)
+ * The home page (sections live in src/components/home/):
+ *
+ *   1. Studio       colour  the featured pieces, each in its own studio carried across the screen
+ *   2. Collections  ivory   the categories as vitrine niches that open on hover
+ *   3. Occasions    tint    a stack of occasion cards, each a line to WhatsApp
+ *   4. Story        noir    the statement lit as it's read; the scroll redraws the monogram
+ *   5. Gallery      ivory   photo ribbons that answer the scroll
+ *   6. Visit        tint    the monogram as a seal; the branches as arched doors
+ *   (footer: the storefront's own)
  */
 export default function HomePage() {
   const { t } = useTranslation();
@@ -42,51 +42,16 @@ export default function HomePage() {
     return () => window.cancelAnimationFrame(frame);
   }, [hash, isLoading]);
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'Bakery',
-    name: t('brand.name'),
-    alternateName: 'Dalloyou',
-    url: `${origin}/`,
-    logo: `${origin}/brand/icon-512.png`,
-    image: `${origin}/brand/og-image.jpg`,
-    telephone: `+${WHATSAPP_NUMBER}`,
-    servesCuisine: ['Desserts', 'Cakes', 'Chocolate'],
-    hasMenu: `${origin}/menu`,
-    sameAs: SOCIALS.map((s) => s.url),
-    department: BRANCHES.map((branch) => ({
-      '@type': 'Bakery',
-      name: `${t('brand.name')} — ${t(`branches.${branch.key}.city`)}`,
-      hasMap: branch.mapsUrl,
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: t(`branches.${branch.key}.area`),
-        addressLocality: t(`branches.${branch.key}.city`),
-        addressRegion: 'المنطقة الشرقية',
-        addressCountry: 'SA',
-      },
-    })),
-  };
-
   return (
-    <>
-      <Helmet>
-        <title>{t('page.homeTitle')}</title>
-        <meta name="description" content={t('page.homeDesc')} />
-        <meta property="og:title" content={t('page.homeTitle')} />
-        <meta property="og:description" content={t('page.homeDesc')} />
-        <meta property="og:type" content="website" />
-        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
-      </Helmet>
+    <SmoothScroll>
+      <Seo title={t('seo.homeTitle')} description={t('seo.homeDesc')} path="/" jsonLd={[businessJsonLd(t), websiteJsonLd()]} />
 
-      <Hero />
-      <Marquee />
-      <CategoryShowcase />
-      <NewArrivals />
-      <StorySection />
-      <WorldGallery />
-      <VisitSection />
-    </>
+      <HomeHero />
+      <HomeCollections />
+      <HomeOccasions />
+      <HomeStory />
+      <HomeGallery />
+      <HomeVisit />
+    </SmoothScroll>
   );
 }
