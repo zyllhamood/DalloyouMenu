@@ -9,7 +9,7 @@ import OrderChannels from '../product/OrderChannels';
 import Eyebrow from '../ui/Eyebrow';
 import Reveal from '../ui/Reveal';
 import { WhatsAppGlyph } from '../WhatsAppIcon';
-import { BRANCHES, SOCIALS, WHATSAPP_DISPLAY, WHATSAPP_ORDER_URL, WHATSAPP_URL } from '../../config/links';
+import { BRANCHES, OCCASIONS_PACKAGE_URL, SOCIALS, WHATSAPP_DISPLAY, WHATSAPP_ORDER_URL, WHATSAPP_URL } from '../../config/links';
 import { categoryName, useMenuIndex } from '../../lib/menu';
 
 function Column({ title, children }: { title: string; children: ReactNode }) {
@@ -120,6 +120,12 @@ export function Footer() {
             ))}
             <Link as={RouterLink} to="/menu" {...linkStyle}>
               {t('home.viewAll')}
+            </Link>
+            <Link as={RouterLink} to="/designs" {...linkStyle}>
+              {t('nav.designs')}
+            </Link>
+            <Link href={OCCASIONS_PACKAGE_URL} isExternal aria-label={t('package.aria')} {...linkStyle}>
+              {t('package.label')}
             </Link>
           </Column>
 

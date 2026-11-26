@@ -21,6 +21,7 @@ import { AppShell } from './App';
 import { heroCandidates } from './components/home/heroCandidates';
 import { backdropSource, primeLooks } from './hooks/useLooks';
 import { fetchMenu, type MenuData } from './lib/api';
+import { DESIGNS_QUERY_KEY, designImage, fetchDesigns, type DesignsData } from './lib/designs';
 import type { BootData } from './lib/boot';
 import './lib/i18n';
 import { buildMenuIndex, MENU_QUERY_KEY } from './lib/menu';
@@ -32,6 +33,9 @@ export { analyseBackdrop, BACKDROP_SAMPLE, SITE_URL };
 
 /** The menu, exactly as the app loads it. */
 export const loadMenu = (): Promise<MenuData> => fetchMenu();
+
+/** The custom designs, exactly as the app loads them. */
+export const loadDesigns = (): Promise<DesignsData> => fetchDesigns();
 
 /** The hero photos whose looks the build reads ahead of time. */
 export function lookTargets(menu: MenuData): { id: number; src: string | null }[] {
@@ -49,7 +53,7 @@ const day = (iso: string | undefined | null) => (iso ? iso.slice(0, 10) : null);
 const newest = (dates: (string | null)[]) => dates.filter(Boolean).sort().pop() ?? null;
 
 /** Every public page worth a static copy and a sitemap entry. */
-export function pages(menu: MenuData): PageEntry[] {
+export function pages(menu: MenuData, designs?: DesignsData | null): PageEntry[] {
   const index = buildMenuIndex(menu);
   const productDay = new Map(index.products.map((p) => [p.id, day(p.updated_at ?? p.created_at)]));
   const all = newest([...productDay.values()]);
@@ -68,6 +72,7 @@ export function pages(menu: MenuData): PageEntry[] {
       ],
     },
     { path: '/menu', lastmod: all, images: [] },
+    { path: '/designs', lastmod: null, images: (designs?.designs ?? []).map((d) => designImage(d, 1600)) },
   ];
   index.categories.forEach((category) => {
     const products = index.byCategory.get(category.id) ?? [];
@@ -102,6 +107,7 @@ export function prime(data: BootData) {
 export function render(url: string): { html: string; styles: string } {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
   if (boot) queryClient.setQueryData(MENU_QUERY_KEY, boot.menu);
+  if (boot?.designs) queryClient.setQueryData(DESIGNS_QUERY_KEY, boot.designs);
 
   const cache = createCache({ key: 'css' });
   const { extractCriticalToChunks, constructStyleTagsFromChunks } = createEmotionServer(cache);

@@ -163,7 +163,7 @@ export function HomeGallery() {
       <Container maxW={CONTAINER_W}>
         <Flex direction={{ base: 'column', md: 'row' }} align={{ md: 'flex-end' }} justify="space-between" gap={6}>
           <Box>
-            <SectionMarker index={4} label={COPY.gallery.marker} />
+            <SectionMarker index={5} label={COPY.gallery.marker} />
             <RevealWords id="home-gallery-title" as="h2" text={t('home.worldTitle')} mt={{ base: 5, md: 6 }} {...TYPE.title} />
           </Box>
           <HStack spacing={2}>

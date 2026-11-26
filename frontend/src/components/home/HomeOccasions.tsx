@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Box, Button, Container, Flex, Grid, Text } from '@chakra-ui/react';
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'framer-motion';
 
+import OccasionsPackageButton from '../OccasionsPackageButton';
 import { WhatsAppGlyph } from '../WhatsAppIcon';
 import { createWhatsAppUrl } from '../../config/links';
 import { COPY } from './content';
@@ -156,11 +157,15 @@ export function HomeOccasions() {
   return (
     <HomeSection surface="tint" aria-labelledby="home-occasions-title">
       <Container maxW={CONTAINER_W}>
-        <Box maxW="720px">
-          <SectionMarker index={2} label={COPY.occasions.marker} />
-          <RevealWords id="home-occasions-title" as="h2" text={COPY.occasions.title} gold={['داليو']} mt={{ base: 5, md: 6 }} {...TYPE.title} />
-          <RevealWords text={COPY.occasions.sub} delay={0.25} mt={{ base: 3, md: 4 }} color="text.muted" maxW="560px" {...TYPE.lead} />
-        </Box>
+        <Flex direction={{ base: 'column', md: 'row' }} align={{ base: 'flex-start', md: 'flex-end' }} justify="space-between" gap={{ base: 6, md: 8 }}>
+          <Box maxW="720px">
+            <SectionMarker index={2} label={COPY.occasions.marker} />
+            <RevealWords id="home-occasions-title" as="h2" text={COPY.occasions.title} gold={['داليو']} mt={{ base: 5, md: 6 }} {...TYPE.title} />
+            <RevealWords text={COPY.occasions.sub} delay={0.25} mt={{ base: 3, md: 4 }} color="text.muted" maxW="560px" {...TYPE.lead} />
+          </Box>
+          {/* The occasions package (the trays catalogue, a PDF) for anyone planning ahead. */}
+          <OccasionsPackageButton flexShrink={0} />
+        </Flex>
 
         <Box ref={ref} mt={{ base: 10, md: 16 }}>
           {COPY.occasions.items.map((occasion, i) => (

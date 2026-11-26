@@ -120,7 +120,7 @@ export function HomeStory() {
   return (
     <HomeSection surface="noir" overflow="hidden" aria-labelledby="home-story-title">
       <Container maxW={CONTAINER_W} position="relative" zIndex={1}>
-        <SectionMarker index={3} label={COPY.story.marker} tone="dark" />
+        <SectionMarker index={4} label={COPY.story.marker} tone="dark" />
 
         <Grid ref={ref} templateColumns={{ base: '1fr', lg: '1fr 0.42fr' }} gap={{ base: 10, lg: 16 }} alignItems="center" mt={{ base: 8, md: 12 }}>
           <Text

@@ -7,6 +7,8 @@
   "nav": {
     "home": "Home",
     "menu": "Menu",
+    "designs": "Custom designs",
+    "designsShort": "Designs",
     "branches": "Branches",
     "order": "Order now",
     "orderShort": "Order",
@@ -185,6 +187,35 @@
     "productTitle": "{{name}} | {{category}} by Dalloyou — SAR {{price}}",
     "productFacts": "{{name}} by Dalloyou ({{category}}{{measure}}) for SAR {{price}}.",
     "productCta": "Made fresh — order on WhatsApp or the delivery apps in Khobar and Dammam.",
-    "notFoundTitle": "Page not found — Dalloyou"
+    "notFoundTitle": "Page not found — Dalloyou",
+    "designsTitle": "Custom cake designs, made to order | Dalloyou — Khobar & Dammam",
+    "designsDesc": "Custom-designed cakes for birthdays, graduations, weddings and national days by Dalloyou in Khobar and Dammam. Pick from our designs or send your idea and order on WhatsApp.",
+    "designsService": "Custom-designed cakes, made to order"
+  },
+  "designs": {
+    "title": "Custom Designs",
+    "eyebrow": "Made to order",
+    "subtitle": "A cake designed for your occasion: pick from our work, or send us your idea and we'll take it from there on WhatsApp.",
+    "homeTitle": "Your cake, as you imagine it",
+    "homeSub": "Designs we've made for birthdays, graduations, weddings and occasions — pick one close to yours or send your idea.",
+    "step1Title": "Pick a design",
+    "step1Text": "Browse our work and pick the closest to your occasion, or bring a picture of your idea.",
+    "step2Title": "Message us on WhatsApp",
+    "step2Text": "Send the design or your idea, and we'll agree on size, flavour and date.",
+    "step3Title": "We make it for your day",
+    "step3Text": "Made with care, ready on your date.",
+    "sendIdea": "Send your idea",
+    "viewAll": "All designs",
+    "imageAlt": "Custom cake design by Dalloyou — {{n}}",
+    "ideaTitle": "Have a different idea?",
+    "ideaText": "Send us a picture or a description of what you have in mind, and we'll design it for you.",
+    "empty": "Our design gallery is on its way — send us your idea and we'll design it for you.",
+    "menuBandTitle": "Looking for something different?",
+    "menuBandText": "Custom-designed cakes, made to order for any occasion.",
+    "ideaMessage": "Hello, I have an idea for a custom cake and would like to order."
+  },
+  "package": {
+    "label": "Occasions package",
+    "aria": "Occasions package — PDF, opens in a new tab"
   }
 }

@@ -31,7 +31,7 @@ export function HomeVisit() {
           <Box ref={sealRef} w={{ base: '64px', md: '76px' }} mb={{ base: 6, md: 8 }}>
             <AnimatedMonogram play={sealInView} duration={1.8} nib={!reduce} w="100%" sx={{ aspectRatio: '1' }} />
           </Box>
-          <SectionMarker index={5} label={COPY.visit.marker} justify="center" />
+          <SectionMarker index={6} label={COPY.visit.marker} justify="center" />
           <RevealWords id="home-visit-title" as="h2" text={COPY.visit.title} mt={{ base: 5, md: 6 }} {...TYPE.title} />
           <RevealWords text={t('home.visitTitle')} delay={0.2} mt={{ base: 2, md: 3 }} color="text.muted" {...TYPE.lead} />
         </Flex>

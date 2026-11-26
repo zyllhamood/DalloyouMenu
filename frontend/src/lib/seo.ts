@@ -1,5 +1,6 @@
 import { BRANCHES, SOCIALS, WHATSAPP_NUMBER, WHATSAPP_ORDER_URL } from '../config/links';
 import type { MenuCategory, Product } from './api';
+import { designImage, type Design } from './designs';
 import { productImageSource } from './images';
 import { categoryName, displayName, productDescription, type MenuIndex } from './menu';
 import { effectivePrice } from './price';
@@ -94,6 +95,44 @@ export function websiteJsonLd() {
     alternateName: BRAND_NAMES.alternate,
     inLanguage: 'ar',
     publisher: { '@id': BUSINESS_ID },
+  };
+}
+
+/** The custom designs: a gallery of the house's work, and the made-to-order service behind it. */
+export function designsJsonLd(designs: Design[], t: Translate) {
+  return {
+    '@type': 'CollectionPage',
+    '@id': `${SITE_URL}/designs#page`,
+    name: t('seo.designsTitle'),
+    description: t('seo.designsDesc'),
+    url: absoluteUrl('/designs'),
+    inLanguage: 'ar',
+    isPartOf: { '@id': WEBSITE_ID },
+    about: {
+      '@type': 'Service',
+      name: t('seo.designsService'),
+      serviceType: 'Custom cakes',
+      provider: { '@id': BUSINESS_ID },
+      areaServed: BRANCHES.map((b) => ({ '@type': 'City', name: t(`branches.${b.key}.city`) })),
+      availableChannel: { '@type': 'ServiceChannel', serviceUrl: WHATSAPP_ORDER_URL },
+    },
+    ...(designs.length
+      ? {
+          mainEntity: {
+            '@type': 'ImageGallery',
+            numberOfItems: designs.length,
+            associatedMedia: designs.map((design, i) => ({
+              '@type': 'ImageObject',
+              contentUrl: designImage(design, 1600),
+              thumbnailUrl: designImage(design, 640),
+              name: t('designs.imageAlt', { n: i + 1 }),
+              creator: { '@id': BUSINESS_ID },
+              creditText: BRAND_NAMES.primary,
+              copyrightNotice: BRAND_NAMES.primary,
+            })),
+          },
+        }
+      : {}),
   };
 }
 

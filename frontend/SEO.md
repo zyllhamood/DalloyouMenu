@@ -12,6 +12,7 @@ The storefront is a single-page app (Vite and React). `npm run build` adds a pre
 4. `node scripts/prerender.mjs`: fetches the live menu from `VITE_API_BASE_URL` once, then writes:
    - `dist/index.html`, the home page;
    - `dist/menu/…`, the menu and each category (`/menu/cakes`, …);
+   - `dist/designs/…`, the custom designs page;
    - `dist/product/<id>/…`, every product;
    - `dist/sitemap.xml`, with every page and its images;
    - `dist/robots.txt`, which allows everything except `/admin` and points to the sitemap.
@@ -30,6 +31,7 @@ To build without prerendering, run `npm run build:spa`.
 | Menu | The full price list | `Menu` with each section and item and its price, `BreadcrumbList` |
 | Category | The category name and product count | `ItemList`, `BreadcrumbList` |
 | Product | Name, category and price | `Product` with an `Offer` (price in SAR, availability), `BreadcrumbList` |
+| Custom designs | Keywords: custom cakes for birthdays, graduations, weddings | `CollectionPage` with an `ImageGallery` of every design and the made-to-order `Service`, `BreadcrumbList` |
 | Missing product or page | Not found | Marked `noindex` |
 
 Every page also carries:
@@ -65,3 +67,11 @@ It should print the product's title, not the home page's.
 2. **Google Business Profile, one per branch:** this is the biggest factor for searches like "كيك الخبر" and "حلويات الدمام" in Maps. Set the website to `https://dalloyou.com`, the category to Bakery or Dessert shop, and add opening hours, photos and the menu link. Ask customers for reviews.
 3. **Details that would strengthen the structured data:** opening hours, full street addresses and map coordinates for each branch. Send them and they go into `businessJsonLd` in `src/lib/seo.ts`. Don't add reviews or ratings that aren't real; Google penalises that.
 4. **Cloudflare's managed robots.txt** blocks AI-training crawlers (GPTBot, Google-Extended, …). That doesn't affect Google Search or ChatGPT search, whose `OAI-SearchBot` is allowed. Change it in the Cloudflare dashboard only if you want AI models trained on the site.
+
+## Custom designs (`/designs`)
+
+The designs are the in-store tablets' «تصميمات خاصة» gallery, so they're managed from the iPad admin: the title, the photos, their order, and whether the gallery is shown. The site reads them from the public `/api/ipad/menu/` endpoint.
+
+- **Where they appear:** the `/designs` page, the home page (chapter 03), a band at the end of the menu page, the navbar, the phone dock and the footer.
+- **Hidden in the iPad admin:** the home section and the menu band disappear, and the page shows an invitation to send an idea.
+- **Ordering:** the designs are shown as images only (no click or hover). Orders come in through the "أرسل فكرتك" WhatsApp buttons.

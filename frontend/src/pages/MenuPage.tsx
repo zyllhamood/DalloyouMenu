@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import Monogram from '../components/brand/Monogram';
+import DesignsBand from '../components/designs/DesignsBand';
 import Seo from '../components/Seo';
 import { SearchField, SizeChips, ViewToggle, type MenuView } from '../components/menu/MenuControls';
 import { ArchOutline } from '../components/brand/Arch';
@@ -421,6 +422,7 @@ export default function MenuPage() {
             {sections.map((section, i) => (
               <MenuSection key={section.category.id} section={section} view={view} first={i === 0} />
             ))}
+            {!filtering && <DesignsBand />}
           </>
         )}
       </Container>

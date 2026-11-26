@@ -48,6 +48,7 @@ export function Navbar() {
   const entries: NavEntry[] = [
     { key: 'nav.home', to: '/', active: pathname === '/' && !onBranchesHash },
     { key: 'nav.menu', to: '/menu', active: pathname.startsWith('/menu') || pathname.startsWith('/product') },
+    { key: 'nav.designs', to: '/designs', active: pathname.startsWith('/designs') },
     { key: 'nav.branches', to: BRANCHES_TO, active: onBranchesHash, onClick: onBranches },
   ];
   if (hydrated && token) entries.push({ key: 'nav.dashboard', to: '/admin', active: false });

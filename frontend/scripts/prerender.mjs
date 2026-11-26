@@ -47,6 +47,15 @@ try {
 }
 log(`menu: ${menu.categories.length} categories, ${menu.products.length} products`);
 
+// The custom designs are optional: without them the page still renders (and fills in live).
+let designs = null;
+try {
+  designs = await server.loadDesigns();
+  log(`designs: ${designs.designs.length}`);
+} catch (error) {
+  log(`designs unavailable (${error?.message ?? error}) — /designs will load them in the browser.`);
+}
+
 /** The hero's photo looks, read from the same thumbnails the browser would read. */
 async function readLooks() {
   const looks = {};
@@ -76,7 +85,7 @@ async function readLooks() {
 }
 
 const looks = await readLooks();
-const boot = { menu, menuAt: Date.now(), looks };
+const boot = { menu, menuAt: Date.now(), looks, designs };
 server.prime(boot);
 log(`hero looks: ${Object.values(looks).map((l) => l.kind).join(', ') || 'none'}`);
 
@@ -146,7 +155,7 @@ async function write(path, content) {
   await writeFile(join(dist, `${clean}.html`), content);
 }
 
-const entries = server.pages(menu);
+const entries = server.pages(menu, designs);
 let written = 0;
 for (const entry of entries) {
   try {

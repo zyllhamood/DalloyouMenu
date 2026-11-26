@@ -1,7 +1,7 @@
 import { useSyncExternalStore, type MouseEvent } from 'react';
-import { Box, Button, HStack } from '@chakra-ui/react';
+import { Box, Button, HStack, useMediaQuery } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, House, MapPin, type LucideIcon } from 'lucide-react';
+import { BookOpen, Cake, House, MapPin, type LucideIcon } from 'lucide-react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -28,6 +28,8 @@ interface DockEntry {
   icon: LucideIcon;
   active: boolean;
   onClick?: (event: MouseEvent) => void;
+  /** A shorter label for the unfolded item, where the full one is too long for the pill. */
+  short?: string;
 }
 
 /**
@@ -48,10 +50,13 @@ export function MobileDock() {
   const entries: DockEntry[] = [
     { key: 'nav.home', to: '/', icon: House, active: pathname === '/' && !onBranchesHash },
     { key: 'nav.menu', to: '/menu', icon: BookOpen, active: pathname.startsWith('/menu') },
+    { key: 'nav.designs', short: 'nav.designsShort', to: '/designs', icon: Cake, active: pathname.startsWith('/designs') },
     { key: 'nav.branches', to: BRANCHES_TO, icon: MapPin, active: onBranchesHash, onClick: onBranches },
   ];
 
   const visible = pastHero && !pathname.startsWith('/product');
+  // Five buttons on the narrowest phones: a little less air around each.
+  const [compact] = useMediaQuery('(max-width: 359px)', { ssr: false });
 
   return (
     <Box
@@ -76,7 +81,7 @@ export function MobileDock() {
         border="1px solid rgba(227, 183, 117, 0.16)"
         boxShadow="0 22px 44px -18px rgba(14, 11, 8, 0.75)"
       >
-        {entries.map(({ key, to, icon: Icon, active, onClick }) => (
+        {entries.map(({ key, short, to, icon: Icon, active, onClick }) => (
           <MotionLink
             key={key}
             to={to}
@@ -92,7 +97,7 @@ export function MobileDock() {
               alignItems: 'center',
               gap: 8,
               height: 44,
-              paddingInline: active ? 16 : 13,
+              paddingInline: active ? 14 : compact ? 9 : 11,
               borderRadius: 999,
               color: active ? 'var(--dy-gold-pale)' : 'rgba(244, 238, 227, 0.72)',
               fontSize: 14,
@@ -123,13 +128,13 @@ export function MobileDock() {
                   transition={{ duration: 0.3 }}
                   style={{ position: 'relative', overflow: 'hidden' }}
                 >
-                  {t(key)}
+                  {t(short ?? key)}
                 </motion.span>
               )}
             </AnimatePresence>
           </MotionLink>
         ))}
-        <Button variant="gold" h="44px" px={5} fontSize="14.5px" onClick={openOrder} tabIndex={visible ? 0 : -1}>
+        <Button variant="gold" h="44px" px={compact ? 4 : 5} fontSize="14.5px" onClick={openOrder} tabIndex={visible ? 0 : -1}>
           {t('nav.orderShort')}
         </Button>
       </HStack>

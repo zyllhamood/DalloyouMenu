@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { primeLooks } from '../hooks/useLooks';
 import type { MenuData } from './api';
+import { DESIGNS_QUERY_KEY, type DesignsData } from './designs';
 import { MENU_QUERY_KEY } from './menu';
 import type { BackdropLook } from './studio';
 
@@ -16,6 +17,8 @@ export interface BootData {
   /** When the menu was fetched (ms) — older than the query's staleTime, so it refetches on load. */
   menuAt: number;
   looks: Record<string, BackdropLook>;
+  /** The custom designs (the iPad gallery), when the build could fetch them. */
+  designs?: DesignsData | null;
 }
 
 declare global {
@@ -27,5 +30,6 @@ declare global {
 export function seedFromBoot(queryClient: QueryClient, boot: BootData | undefined) {
   if (!boot) return;
   queryClient.setQueryData(MENU_QUERY_KEY, boot.menu, { updatedAt: boot.menuAt });
+  if (boot.designs) queryClient.setQueryData(DESIGNS_QUERY_KEY, boot.designs, { updatedAt: boot.menuAt });
   primeLooks(boot.looks);
 }

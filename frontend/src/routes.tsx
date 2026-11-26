@@ -9,6 +9,7 @@ import type { ModalState } from './lib/routing';
 
 import HomePage from './pages/HomePage';
 import MenuPage from './pages/MenuPage';
+import DesignsPage from './pages/DesignsPage';
 import ProductPage from './pages/ProductPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -49,6 +50,7 @@ export function AppRoutes() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/menu" element={<MenuPage />} />
+          <Route path="/designs" element={<DesignsPage />} />
           <Route path="/menu/:categorySlug" element={<MenuPage />} />
           <Route path="/product/:id" element={<ProductPage />} />
           <Route path="*" element={<NotFoundPage />} />

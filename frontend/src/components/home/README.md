@@ -7,6 +7,7 @@
 | `HomeHero.tsx` | The studio: every `is_featured` product, each standing in its own photo studio stretched across the screen |
 | `HomeCollections.tsx` | The categories as vitrine niches |
 | `HomeOccasions.tsx` | Occasion cards that stack as you scroll, each with a WhatsApp order button |
+| `HomeDesigns.tsx` | Custom designs made to order: the first 8 as plain images, the rest on `/designs`, and a "send your idea" WhatsApp button |
 | `HomeStory.tsx` | The house statement, lit word by word; the monogram is drawn by the scroll |
 | `HomeGallery.tsx` | Photo ribbons that react to scroll speed |
 | `HomeVisit.tsx` | The two branches as arched doors |

@@ -6,6 +6,9 @@ export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 const WHATSAPP_GREETING = 'مرحباً، أرغب في الطلب من داليو. / Hello, I would like to order from Dalloyou.';
 export const WHATSAPP_ORDER_URL = `${WHATSAPP_URL}?text=${encodeURIComponent(WHATSAPP_GREETING)}`;
 
+/** The occasions package (trays and boxes for occasions) — a PDF on Google Drive. */
+export const OCCASIONS_PACKAGE_URL = 'https://drive.google.com/file/d/1HvT9SqRYBewlM7uXk132eArEUho-DMe5/view';
+
 export const THECHEFZ_URL = 'https://thechefzco.app.link/51vU19kzw5b';
 export const HUNGERSTATION_URL = 'https://hungerstation.go.link/?c=SA&s=c&v=104200&so=mls&adj_t=1sdhhuza_1spi9ypp&adj_og_title=%D8%AF%D8%A7%D9%84%D9%8A%D9%88&adj_og_image=https://images.deliveryhero.io/image/hungerstation/restaurant/logo_ar/33a1dd75f9d28b06f77bb80304a293d6.png';
 export const KEETA_URL = 'https://url.mykeeta.com/rGpnyECz';
